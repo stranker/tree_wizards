@@ -1,0 +1,14 @@
+[remap]
+
+importer="Vox.Importer"
+type="Mesh"
+path="res://.import/hearth.vox-d17eef8d082e68f8c15170ad716586b9.mesh"
+
+[deps]
+
+source_file="res://UI/hearth.vox"
+dest_files=[ "res://.import/hearth.vox-d17eef8d082e68f8c15170ad716586b9.mesh" ]
+
+[params]
+
+Scale=0.1

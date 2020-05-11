@@ -1,0 +1,43 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://UI/normal_heart_ui.png" type="Texture" id=1]
+[ext_resource path="res://UI/black_heart_ui.png" type="Texture" id=2]
+
+
+
+
+
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Control
+
+export var normal_heart : Texture
+export var black_heart : Texture
+
+func on_hit():
+	$Icon.texture = black_heart
+
+func reset():
+	$Icon.texture = normal_heart
+"
+
+[node name="Heart" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -1860.0
+margin_bottom = -1020.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = SubResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+normal_heart = ExtResource( 1 )
+black_heart = ExtResource( 2 )
+
+[node name="Icon" type="TextureRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource( 1 )
+expand = true
+stretch_mode = 6

@@ -1,0 +1,14 @@
+[remap]
+
+importer="Vox.Importer"
+type="Mesh"
+path="res://.import/cube_tree.vox-29706721a38493fabb9c0e774f20241c.mesh"
+
+[deps]
+
+source_file="res://Objects/Props/cube_tree.vox"
+dest_files=[ "res://.import/cube_tree.vox-29706721a38493fabb9c0e774f20241c.mesh" ]
+
+[params]
+
+Scale=0.1

@@ -1,0 +1,125 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://Objects/Spells/Fa.tscn" type="PackedScene" id=1]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends \"res://Objects/Spells/TargetSpell.gd\"
+
+func _process(delta):
+	if target:
+		var enemy_pos = target.global_transform.origin
+		for ice in $Visual.get_children():
+			if not ice is Spatial:
+				return
+			var dir = (enemy_pos - ice.global_transform.origin).normalized()
+			ice.spell_dir(dir, false)
+			if chase:
+				if !ice.can_move:
+					ice.spell_dir(dir,true)
+	pass
+
+func _on_Anim_animation_finished(anim_name):
+	chase = true
+	pass # Replace with function body.
+
+
+func _on_IceMissile_on_target(target):
+	pass # Replace with function body.
+"
+
+[sub_resource type="Animation" id=2]
+resource_name = "IceMissile"
+tracks/0/type = "value"
+tracks/0/path = NodePath("Visual/IceStake:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 1 ),
+"transitions": PoolRealArray( 0.183011, 1 ),
+"update": 0,
+"values": [ Vector3( 0.1, 0.1, 0.1 ), Vector3( 0.5, 0.5, 0.5 ) ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Visual/IceStake2:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 1 ),
+"transitions": PoolRealArray( 0.183011, 1 ),
+"update": 0,
+"values": [ Vector3( 0.1, 0.1, 0.1 ), Vector3( 0.5, 0.5, 0.5 ) ]
+}
+tracks/2/type = "value"
+tracks/2/path = NodePath("Visual/IceStake3:scale")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/keys = {
+"times": PoolRealArray( 0, 1 ),
+"transitions": PoolRealArray( 0.183011, 1 ),
+"update": 0,
+"values": [ Vector3( 0.1, 0.1, 0.1 ), Vector3( 0.5, 0.5, 0.5 ) ]
+}
+tracks/3/type = "value"
+tracks/3/path = NodePath("Visual/IceStake:translation")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/keys = {
+"times": PoolRealArray( 0, 1 ),
+"transitions": PoolRealArray( 0.183011, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 1, 0 ), Vector3( -0.196623, 1.94009, 0.297708 ) ]
+}
+tracks/4/type = "value"
+tracks/4/path = NodePath("Visual/IceStake2:translation")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/keys = {
+"times": PoolRealArray( 0, 1 ),
+"transitions": PoolRealArray( 0.183011, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 1, 0 ), Vector3( 0.498866, 1.37278, -0.456415 ) ]
+}
+tracks/5/type = "value"
+tracks/5/path = NodePath("Visual/IceStake3:translation")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/keys = {
+"times": PoolRealArray( 0, 1 ),
+"transitions": PoolRealArray( 0.183011, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 1, 0 ), Vector3( -0.790427, 1.4409, 0 ) ]
+}
+
+[node name="FaDor" type="Spatial"]
+script = SubResource( 1 )
+spell_name = "FaDor"
+spell_type = 2
+
+[node name="Visual" type="Spatial" parent="."]
+
+[node name="IceStake" parent="Visual" instance=ExtResource( 1 )]
+transform = Transform( 0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 1, 0 )
+
+[node name="IceStake2" parent="Visual" instance=ExtResource( 1 )]
+transform = Transform( 0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 1, 0 )
+
+[node name="IceStake3" parent="Visual" instance=ExtResource( 1 )]
+transform = Transform( 0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 1, 0 )
+
+[node name="Anim" type="AnimationPlayer" parent="."]
+autoplay = "IceMissile"
+anims/IceMissile = SubResource( 2 )
+[connection signal="on_target" from="." to="." method="_on_IceMissile_on_target"]
+[connection signal="animation_finished" from="Anim" to="." method="_on_Anim_animation_finished"]

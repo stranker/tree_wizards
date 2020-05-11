@@ -1,0 +1,14 @@
+[remap]
+
+importer="Vox.Importer"
+type="Mesh"
+path="res://.import/grass_dirt_5x5.vox-185af0678776e28e3550fdb7e53556a1.mesh"
+
+[deps]
+
+source_file="res://Assets/TileSet/grass_dirt_5x5.vox"
+dest_files=[ "res://.import/grass_dirt_5x5.vox-185af0678776e28e3550fdb7e53556a1.mesh" ]
+
+[params]
+
+Scale=0.1

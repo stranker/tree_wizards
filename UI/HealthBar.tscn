@@ -1,0 +1,49 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://UI/HealthBarHeart.tscn" type="PackedScene" id=1]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Spatial
+
+onready var camera : Camera = get_viewport().get_camera()
+
+export var offset : Vector2 = Vector2.ZERO
+
+func _process(delta):
+	update_position()
+	pass
+
+func update_position():
+	var position = camera.unproject_position(global_transform.origin)
+	$Anchor.rect_global_position = position + offset
+	pass
+
+func set_health(value):
+	$Anchor/HealthBarHeart.set_health(value)
+
+func _on_Enemy_take_damage(value):
+	$Anchor/HealthBarHeart.take_damage(value)
+	pass # Replace with function body.
+
+
+func _on_Enemy_dead():
+	$Anchor/HealthBarHeart.reset()
+	pass # Replace with function body.
+"
+
+[node name="HealthBar" type="Spatial"]
+script = SubResource( 1 )
+offset = Vector2( 0, -20 )
+
+[node name="Anchor" type="Control" parent="."]
+margin_right = 1.0
+margin_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HealthBarHeart" parent="Anchor" instance=ExtResource( 1 )]
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -60.0
+margin_right = 60.0

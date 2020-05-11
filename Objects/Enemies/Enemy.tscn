@@ -1,0 +1,194 @@
+[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://Objects/Enemies/goblin.vox" type="ArrayMesh" id=1]
+[ext_resource path="res://UI/HealthBar.tscn" type="PackedScene" id=2]
+[ext_resource path="res://Objects/Misc/FakeShadow.tscn" type="PackedScene" id=3]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends KinematicBody
+
+export var velocity : Vector3
+export var speed : float = 500.0
+export var movement_dir : Vector3
+export var rotation_dir : Vector2
+export var is_moving : bool = false
+export var rotation_speed : float = 10
+export var gravity : float = 200
+export var max_force : float = 5
+export var mass : float = 2
+export var health : int = 2
+
+var initial_pos : Vector3 = Vector3.ZERO
+
+var player = null
+export var can_move : bool = false
+
+signal dead()
+signal take_damage(value)
+
+func _ready():
+	$HealthBar.set_health(health)
+	initial_pos = global_transform.origin
+	pass
+
+func _physics_process(delta):
+	var steering = Vector3.ZERO
+	if !can_move:
+		return
+	if !is_on_floor():
+		velocity.y -= delta * gravity
+	if player:
+		var player_pos = player.global_transform.origin
+		var desired_velocity = (player_pos - transform.origin).normalized() * speed
+		steering = desired_velocity - velocity
+		steering = steering / mass
+		rotation = Vector3(0, lerp_angle(rotation.y, Vector2(steering.z,steering.x).angle(), delta * rotation_speed),0)
+		move_and_slide(velocity + steering, Vector3.UP)
+	pass
+
+func get_dir_rotation(pos : Vector3):
+	return Vector2(pos.x,pos.z)
+
+func get_forward():
+	return transform.basis.z
+
+func lerp_angle(from, to, weight):
+	return from + short_angle_dist(from, to) * weight
+
+func short_angle_dist(from, to):
+	var max_angle = PI * 2
+	var difference = fmod(to - from, max_angle)
+	return fmod(2 * difference, max_angle) - difference
+
+func _on_PlayerDetector_body_entered(body):
+	if body.is_in_group(\"Player\"):
+		player = body
+		is_moving = true
+		$Skin/Anim.play(\"Walk\")
+	pass # Replace with function body.
+
+func _on_PlayerDetector_body_exited(body):
+	if body.is_in_group(\"Player\") and player:
+		player = null
+		is_moving = false
+		$Skin/Anim.play(\"Idle\")
+	pass # Replace with function body.
+
+func take_damage(value : int, knocbak_dir : Vector3):
+	health -= value
+	velocity = knocbak_dir * 5
+	emit_signal(\"take_damage\", value)
+	if health <= 0:
+		emit_signal(\"dead\")
+		reset()
+	pass
+
+func reset():
+	global_transform.origin = initial_pos
+	health = 2
+	pass
+
+func freeze(damage):
+	take_damage(damage, Vector3.ZERO)
+	can_move = false
+	$FreezeTime.start()
+	pass
+
+func _on_FreezeTime_timeout():
+	can_move = true
+	pass # Replace with function body.
+"
+
+[sub_resource type="Animation" id=2]
+resource_name = "Idle"
+length = 0.1
+loop = true
+tracks/0/type = "value"
+tracks/0/path = NodePath("Mesh:rotation_degrees")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0 ),
+"transitions": PoolRealArray( 1 ),
+"update": 0,
+"values": [ Vector3( 0, 180, 0 ) ]
+}
+
+[sub_resource type="Animation" id=3]
+resource_name = "Walk"
+length = 0.6
+loop = true
+tracks/0/type = "value"
+tracks/0/path = NodePath("Mesh:rotation_degrees")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.3 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 180, 10 ), Vector3( 0, 180, -10 ) ]
+}
+
+[sub_resource type="CapsuleShape" id=4]
+radius = 0.353355
+height = 0.374221
+
+[sub_resource type="SphereShape" id=5]
+radius = 10.0
+
+[node name="Enemy" type="KinematicBody" groups=[
+"Enemy",
+]]
+script = SubResource( 1 )
+speed = 150.0
+rotation_speed = 2.0
+can_move = true
+
+[node name="Skin" type="Spatial" parent="."]
+
+[node name="Mesh" type="MeshInstance" parent="Skin"]
+transform = Transform( -0.984808, -0.173648, -3.25841e-07, -0.173648, 0.984808, 0, 3.20891e-07, 5.65818e-08, -1, 0, 0, 0 )
+mesh = ExtResource( 1 )
+material/0 = null
+
+[node name="Anim" type="AnimationPlayer" parent="Skin"]
+autoplay = "Idle"
+anims/Idle = SubResource( 2 )
+anims/Walk = SubResource( 3 )
+
+[node name="CollisionShape" type="CollisionShape" parent="."]
+transform = Transform( 1, 0, 0, 0, -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, 0.541065, 0 )
+shape = SubResource( 4 )
+
+[node name="PlayerDetector" type="Area" parent="."]
+
+[node name="CollisionShape" type="CollisionShape" parent="PlayerDetector"]
+shape = SubResource( 5 )
+
+[node name="RayCast" type="RayCast" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.415605, 0 )
+cast_to = Vector3( 0, 0, 2 )
+
+[node name="FreezeTime" type="Timer" parent="."]
+wait_time = 2.0
+one_shot = true
+
+[node name="Sprite3D" type="Sprite3D" parent="."]
+
+[node name="HealthBar" parent="." instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.34727, 0 )
+
+[node name="FakeShadow" parent="." instance=ExtResource( 3 )]
+shadow_size = 0.6
+activated = true
+object_movable = true
+target_node_path = NodePath("..")
+[connection signal="dead" from="." to="HealthBar" method="_on_Enemy_dead"]
+[connection signal="take_damage" from="." to="HealthBar" method="_on_Enemy_take_damage"]
+[connection signal="body_entered" from="PlayerDetector" to="." method="_on_PlayerDetector_body_entered"]
+[connection signal="body_exited" from="PlayerDetector" to="." method="_on_PlayerDetector_body_exited"]
+[connection signal="timeout" from="FreezeTime" to="." method="_on_FreezeTime_timeout"]

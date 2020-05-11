@@ -1,0 +1,101 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://GUI/BigCircle.png" type="Texture" id=1]
+[ext_resource path="res://GUI/SmallCircle.png" type="Texture" id=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Control
+
+var pressed : bool = false
+var posBola : Vector2
+var fuerza : Vector2
+var centroControl
+var sizeCentro
+
+var bg
+var ball
+
+var current_pointer : int = -1
+var screen_drag : bool = false
+
+signal analog_force(force)
+
+func _ready():
+	bg = get_node(\"bg\")
+	ball = get_node(\"ball\")
+	centroControl = bg.global_position
+	sizeCentro = bg.texture.get_size()
+	pass
+
+func _input(event):
+	var pointer = extract_pointer(event)
+	if event is InputEventScreenTouch:
+		if !screen_drag and current_pointer != pointer and event.pressed and isInside(event.position.x,event.position.y):
+			if !MultiTouch.pointer_dic.keys().has(pointer):
+				MultiTouch.pointer_dic[\"Joystick\"] = pointer
+				current_pointer = pointer
+	if current_pointer == -1:
+		return
+	if current_pointer == pointer:
+		process_input(event)
+	pass
+
+func extract_pointer(event):
+	var touch = event is InputEventScreenTouch
+	var drag = event is InputEventScreenDrag
+	if touch or drag:
+		return event.index
+	else:
+		return -1
+
+func process_input(event):
+	if event is InputEventScreenDrag:
+		if isInside(event.position.x, event.position.y):
+			pressed = true
+			screen_drag = true
+	if event is InputEventScreenTouch:
+		if !event.is_pressed():
+			ball.position = Vector2(0,0)
+			fuerza = Vector2(0,0)
+			emit_signal(\"analog_force\", fuerza)
+			pressed = false
+			screen_drag = false
+			current_pointer = -1
+			MultiTouch.pointer_dic.erase(\"Joystick\")
+	if pressed:
+		updateBolaPosition(event.position)
+	pass
+
+func isInside(x, y):
+	return x < centroControl.x + sizeCentro.x * 0.5 and x >= centroControl.x - sizeCentro.x * 0.5 and y < centroControl.y + sizeCentro.y * 0.5 and y > centroControl.y - sizeCentro.y * 0.5
+
+func updateBolaPosition(event):
+	calculateForce(event)
+	posBola.x = sizeCentro.x/2 * fuerza.x
+	posBola.y = sizeCentro.y/2 * -fuerza.y
+	ball.position = posBola 
+	pass
+
+func calculateForce(event):
+	fuerza.x = (event.x - centroControl.x)/(sizeCentro.x/2)
+	fuerza.y = -(event.y - centroControl.y)/(sizeCentro.y/2)
+	if fuerza.length_squared() > 1:
+		fuerza = fuerza / fuerza.length()
+	emit_signal(\"analog_force\", fuerza)
+	pass
+"
+
+[node name="Joystick" type="Control"]
+mouse_filter = 1
+script = SubResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="bg" type="Sprite" parent="."]
+self_modulate = Color( 1, 1, 1, 0.596078 )
+texture = ExtResource( 1 )
+
+[node name="ball" type="Sprite" parent="."]
+self_modulate = Color( 1, 1, 1, 0.596078 )
+texture = ExtResource( 2 )

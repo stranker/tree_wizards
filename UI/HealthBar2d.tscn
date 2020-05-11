@@ -1,0 +1,77 @@
+[gd_scene load_steps=4 format=2]
+
+[sub_resource type="StyleBoxFlat" id=1]
+bg_color = Color( 0.0941176, 0.709804, 0.180392, 1 )
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color( 0.0745098, 0.517647, 0.133333, 1 )
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id=2]
+bg_color = Color( 0.792157, 0, 0, 1 )
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color( 0.505882, 0, 0, 1 )
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="GDScript" id=3]
+script/source = "extends ProgressBar
+
+onready var player_camera : Camera = get_tree().root.get_node(\"Test/MainCamera\")
+
+export var offset : Vector2 = Vector2(0,2)
+
+var enemy = null
+
+
+func set_health(health):
+	value = health
+	max_value = value
+
+func take_damage(dmg):
+	value -= dmg
+	pass
+
+func set_target(target):
+	enemy = target
+	set_health(enemy.health)
+	enemy.connect(\"take_damage\", self, \"take_damage\")
+	pass
+
+func _process(delta):
+	if !enemy:
+		return
+	update_position()
+	pass
+
+func update_position():
+	var pos = player_camera.unproject_position(enemy.transform.origin)
+	rect_global_position = pos + offset
+	pass
+"
+
+[node name="HealthBar2d" type="ProgressBar"]
+margin_right = 120.0
+margin_bottom = 10.0
+rect_min_size = Vector2( 120, 20 )
+mouse_filter = 2
+custom_styles/fg = SubResource( 1 )
+custom_styles/bg = SubResource( 2 )
+max_value = 2.0
+value = 1.0
+percent_visible = false
+script = SubResource( 3 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+offset = Vector2( -70, -125 )

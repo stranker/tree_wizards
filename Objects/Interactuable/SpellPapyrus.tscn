@@ -1,0 +1,72 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://Objects/Interactuable/papyrus.vox" type="ArrayMesh" id=1]
+[ext_resource path="res://Objects/Misc/FakeShadow.tscn" type="PackedScene" id=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Spatial
+
+export var speed_rotation : float = 5
+export var spell_learn : String = \"\"
+
+var activated : bool = false
+
+func _process(delta):
+	$Spatial.rotate_y(speed_rotation * delta)
+	pass
+
+func _on_Area_body_entered(body):
+	if body.is_in_group(\"Player\") and !activated:
+		activated = true
+		body.learn_spell(spell_learn)
+		queue_free()
+	pass # Replace with function body.
+"
+
+[sub_resource type="Animation" id=2]
+resource_name = "Idle"
+length = 3.0
+loop = true
+tracks/0/type = "value"
+tracks/0/path = NodePath("Spatial:translation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 1.5 ),
+"transitions": PoolRealArray( 2, 0.5 ),
+"update": 0,
+"values": [ Vector3( 0, 0.5, 0 ), Vector3( 0, 1, 0 ) ]
+}
+
+[sub_resource type="SphereShape" id=3]
+radius = 1.07735
+
+[node name="SpellPapyrus" type="Spatial"]
+script = SubResource( 1 )
+
+[node name="Spatial" type="Spatial" parent="."]
+transform = Transform( 1, 0, 0, 0, 0.87322, -0.487326, 0, 0.487326, 0.87322, 0, 0.528612, 0 )
+
+[node name="MeshInstance" type="MeshInstance" parent="Spatial"]
+transform = Transform( 0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, -0.453042, 0.0351236 )
+mesh = ExtResource( 1 )
+material/0 = null
+
+[node name="Anim" type="AnimationPlayer" parent="."]
+autoplay = "Idle"
+anims/Idle = SubResource( 2 )
+
+[node name="Area" type="Area" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.484194, 0 )
+
+[node name="CollisionShape" type="CollisionShape" parent="Area"]
+shape = SubResource( 3 )
+
+[node name="FakeShadow" parent="." instance=ExtResource( 2 )]
+shadow_size = 0.7
+activated = true
+object_movable = true
+target_node_path = NodePath("../Spatial/MeshInstance")
+[connection signal="body_entered" from="Area" to="." method="_on_Area_body_entered"]

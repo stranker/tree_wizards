@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://Assets/TileSet/TileSetForest.meshlib" type="MeshLibrary" id=1]
+
+[node name="Forest" type="Spatial"]
+
+[node name="GridMap" type="GridMap" parent="." groups=[
+"Map",
+]]
+mesh_library = ExtResource( 1 )
+cell_octant_size = 1
+cell_center_y = false
+collision_layer = 4
+data = {
+"cells": PoolIntArray( 2, 2, 536870913, 65533, 2, 1, 2, 7, 1, 2, 65528, 1, 7, 65528, 1, 65533, 65528, 1, 2, 65533, 1, 7, 65533, 1, 65533, 65533, 1 )
+}
+__meta__ = {
+"_editor_clip_": 0
+}

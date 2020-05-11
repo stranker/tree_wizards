@@ -1,0 +1,14 @@
+[remap]
+
+importer="Vox.Importer"
+type="Mesh"
+path="res://.import/papyrus.vox-c5ba139f4391637ad2aa374242b50d44.mesh"
+
+[deps]
+
+source_file="res://Objects/Interactuable/papyrus.vox"
+dest_files=[ "res://.import/papyrus.vox-c5ba139f4391637ad2aa374242b50d44.mesh" ]
+
+[params]
+
+Scale=0.1

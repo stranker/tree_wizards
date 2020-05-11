@@ -1,0 +1,50 @@
+[gd_scene load_steps=2 format=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Camera
+
+export var custom_pos : Vector3
+export var smooth = false
+export var smooth_speed = 0.125
+
+export var shaking : bool = false
+export var shake_time : float = 0
+export var shake_amount : float = 0
+
+export (NodePath) var target_path
+onready var target = get_node(target_path)
+
+func _ready():
+	CameraSystem.current_camera = self
+	pass
+
+func _process(delta):
+	var target_pos = target.transform.origin
+	if smooth:
+		var lerp_mov = transform.origin.linear_interpolate(target_pos + custom_pos, smooth_speed)
+		transform.origin = lerp_mov
+	else:
+		transform.origin = target_pos + custom_pos
+	
+	if shake_time > 0:
+		shake_time -= delta
+		v_offset = rand_range(-shake_amount, shake_amount)
+		h_offset = rand_range(-shake_amount, shake_amount)
+	pass
+
+
+func shake(time, amount):
+	shake_time = time
+	shake_amount = amount
+	pass
+"
+
+[node name="MainCamera" type="Camera"]
+transform = Transform( -1.62921e-07, 0.642788, -0.766045, 0, 0.766045, 0.642788, 1, 1.04723e-07, -1.24805e-07, -40, 35, 0 )
+keep_aspect = 0
+current = true
+fov = 50.0
+near = 0.2
+script = SubResource( 1 )
+
+[node name="Timer" type="Timer" parent="."]

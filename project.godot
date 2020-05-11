@@ -1,0 +1,55 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=4
+
+_global_script_classes=[  ]
+_global_script_class_icons={
+
+}
+
+[application]
+
+config/name="WizardAndCookies"
+run/main_scene="res://Scenes/Test.tscn"
+config/icon="res://icon.png"
+
+[autoload]
+
+Debug="*res://Managers/Debug.gd"
+CameraSystem="*res://Managers/CameraSystem.gd"
+SpellManager="*res://Managers/SpellManager.gd"
+MultiTouch="*res://MultiTouch.gd"
+
+[debug]
+
+settings/stdout/print_fps=true
+
+[display]
+
+window/size/width=1280
+window/size/height=720
+window/stretch/mode="viewport"
+window/stretch/aspect="keep"
+
+[editor_plugins]
+
+enabled=PoolStringArray( "VoxImporter" )
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+
+[rendering]
+
+quality/driver/driver_name="GLES2"
+vram_compression/import_etc=true
+quality/directional_shadow/size.mobile=512
+quality/shadow_atlas/size.mobile=1024
+environment/default_environment="res://default_env.tres"
+quality/filters/anisotropic_filter_level=2

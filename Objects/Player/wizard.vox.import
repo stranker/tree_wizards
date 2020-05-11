@@ -1,0 +1,14 @@
+[remap]
+
+importer="Vox.Importer"
+type="Mesh"
+path="res://.import/wizard.vox-099e49f44c975cdce1b13224f9c3a70b.mesh"
+
+[deps]
+
+source_file="res://Objects/Player/wizard.vox"
+dest_files=[ "res://.import/wizard.vox-099e49f44c975cdce1b13224f9c3a70b.mesh" ]
+
+[params]
+
+Scale=0.1

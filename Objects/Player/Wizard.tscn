@@ -1,0 +1,501 @@
+[gd_scene load_steps=29 format=2]
+
+[ext_resource path="res://GUI/SpellTree.tscn" type="PackedScene" id=1]
+[ext_resource path="res://GUI/Joystick.tscn" type="PackedScene" id=2]
+[ext_resource path="res://Objects/Spells/Ign.tscn" type="PackedScene" id=3]
+[ext_resource path="res://GUI/BigCircle.png" type="Texture" id=4]
+[ext_resource path="res://Objects/Player/wizard.vox" type="ArrayMesh" id=5]
+[ext_resource path="res://Utility/Spells.tscn" type="PackedScene" id=6]
+[ext_resource path="res://Objects/Spells/Fa.tscn" type="PackedScene" id=7]
+[ext_resource path="res://Assets/Fonts/Iron Latch.TTF" type="DynamicFontData" id=8]
+[ext_resource path="res://Assets/Fonts/Iron100.tres" type="DynamicFont" id=9]
+[ext_resource path="res://Assets/Sprites/Aura.png" type="Texture" id=10]
+[ext_resource path="res://Objects/Spells/FaDor.tscn" type="PackedScene" id=11]
+[ext_resource path="res://Objects/Spells/FaZur.tscn" type="PackedScene" id=12]
+[ext_resource path="res://Objects/Misc/FakeShadow.tscn" type="PackedScene" id=13]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends KinematicBody
+
+export var velocity : Vector3
+export var speed : float = 500.0
+export var movement_dir : Vector3
+export var rotation_dir : Vector2
+export var is_moving : bool = false
+export var rotation_speed : float = 8
+export var jump_speed : float = 600
+export var gravity : float = 200
+export var jump_cut_height : float = 0.5
+export var is_jumping : bool = false
+
+export var spell_dir : Vector3
+
+var enemy_list : Array = []
+
+var new_anim = \"\"
+var anim = \"\"
+
+var pos : Vector3 = Vector3.ZERO
+
+signal learn_spell(spell_name)
+
+func _ready():
+	set_physics_process(true)
+	SpellManager.wizard = self
+	SpellManager.wizard_spell_pos = $Visual/SpellPos
+	SpellManager.wizard_cast_view = $Visual/CastView
+	SpellManager.connect(\"spell_info\", self, \"on_spell_info\")
+	SpellManager.connect(\"spell_casted\", self, \"on_spell_casted\")
+	$Visual/CastView.hide()
+	pass
+
+func _physics_process(delta):
+	if is_moving:
+		rotation.y = lerp_angle(rotation.y, rotation_dir.angle(), delta * rotation_speed)
+		movement_dir = get_forward()
+		spell_dir = spell_direction()
+	if !enemy_list.empty():
+		var enemy = closest_enemy()
+		if enemy:
+			var dir = (enemy.global_transform.origin - transform.origin).normalized()
+			$Visual.rotation.y = lerp_angle($Visual.rotation.y, -rotation.y + Vector2(dir.z,dir.x).angle(), delta * rotation_speed)
+	else:
+		$Visual.rotation.y = lerp_angle($Visual.rotation.y, 0, delta * rotation_speed)
+		$Visual/EnemyCast.cast_to = $MovementCast.cast_to
+	if !is_on_floor():
+		velocity.y -= delta * gravity
+	velocity.x = movement_dir.x * speed if is_moving else 0
+	velocity.z = movement_dir.z * speed if is_moving else 0
+	move_and_slide(velocity, Vector3.UP)
+	pass
+
+func _process(delta):
+	if is_moving:
+		new_anim = \"Walk\"
+	else:
+		new_anim = \"Idle\"
+	if $Visual/Anim.current_animation != new_anim:
+		anim = new_anim
+		$Visual/Anim.play(anim)
+	pass
+
+func closest_enemy():
+	var close_enemy = null
+	if enemy_list.size() == 1:
+		return enemy_list[0]
+	elif enemy_list.size() > 1:
+		var min_distance = distance_to(enemy_list[0])
+		for enemy in enemy_list:
+			var distance = distance_to(enemy)
+			if  distance < min_distance:
+				min_distance = distance
+				close_enemy = enemy
+	return close_enemy
+
+func distance_to(target : Spatial):
+	return global_transform.origin.distance_to(target.global_transform.origin)
+
+func get_forward():
+	return transform.basis.z
+
+func spell_direction():
+	return $Visual.global_transform.basis.z
+
+func lerp_angle(from, to, weight):
+	return from + short_angle_dist(from, to) * weight
+
+func short_angle_dist(from, to):
+	var max_angle = PI * 2
+	var difference = fmod(to - from, max_angle)
+	return fmod(2 * difference, max_angle) - difference
+
+func _on_EnemyDetection_body_entered(body):
+	if body.is_in_group(\"Enemy\"):
+		if !enemy_list.has(body):
+			enemy_list.append(body)
+	pass # Replace with function body.
+
+func _on_EnemyDetection_body_exited(body):
+	if body.is_in_group(\"Enemy\"):
+		if enemy_list.has(body):
+			enemy_list.erase(body)
+	pass # Replace with function body.
+
+func _on_Jump_gui_input(event):
+	if event is InputEventScreenTouch:
+		if event.pressed and is_on_floor():
+			velocity.y = jump_speed
+		if !event.pressed:
+			velocity.y = velocity.y * jump_cut_height
+	pass # Replace with function body.
+
+func learn_spell(spell_name):
+	emit_signal(\"learn_spell\", spell_name)
+	pass
+
+func _on_Joystick_analog_force(force):
+	is_moving = force != Vector2.ZERO
+	rotation_dir = force if is_moving else rotation_dir
+	pass # Replace with function body.
+
+func on_spell_info(spell_range, effect_area):
+	$Visual/CastView.show()
+	$Visual/CastView.transform.origin.z = spell_range
+	$Visual/CastView.scale = Vector3.ONE * effect_area
+	pass # Replace with function body.
+
+func on_spell_casted():
+	$Visual/CastView.hide()
+	pass # Replace with function body.
+"
+
+[sub_resource type="Animation" id=2]
+resource_name = "Idle"
+length = 0.1
+loop = true
+tracks/0/type = "value"
+tracks/0/path = NodePath("Mesh:rotation_degrees")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0 ),
+"transitions": PoolRealArray( 1 ),
+"update": 0,
+"values": [ Vector3( 0, 90, 0 ) ]
+}
+
+[sub_resource type="Animation" id=3]
+resource_name = "Walk"
+length = 0.6
+loop = true
+tracks/0/type = "value"
+tracks/0/path = NodePath("Mesh:rotation_degrees")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.3 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ Vector3( 10, 90, 0 ), Vector3( -10, 90, 0 ) ]
+}
+
+[sub_resource type="SpatialMaterial" id=4]
+flags_transparent = true
+flags_unshaded = true
+albedo_color = Color( 0.556863, 0.0196078, 1, 0.509804 )
+albedo_texture = ExtResource( 10 )
+uv1_scale = Vector3( 2, 2, 2 )
+
+[sub_resource type="CylinderMesh" id=5]
+material = SubResource( 4 )
+top_radius = 0.5
+bottom_radius = 0.5
+height = 0.001
+rings = 3
+
+[sub_resource type="Curve" id=6]
+_data = [ Vector2( 0, 0.748864 ), 0.0, 0.495606, 0, 1, Vector2( 0.506726, 1 ), 0.0, 0.0, 0, 0, Vector2( 1, 0.703409 ), -0.601271, 0.0, 1, 0 ]
+
+[sub_resource type="GDScript" id=7]
+script/source = "extends Control
+
+onready var spell_cast_text = get_node(\"SpellCast/SpellCast\")
+onready var spell_cast_anim = get_node(\"SpellCast/SpellCast/Anim\")
+
+func _on_Wizard_learn_spell(spell_name):
+	$SpellLearned.text = \"Word spell learned - \" + spell_name
+	spell_cast_anim.play(\"Learned\")
+	pass # Replace with function body.
+
+func _on_PowerTree_cast_spell(spell_list):
+	spell_cast_text.text = get_spell_name(spell_list)
+	if spell_cast_anim.is_playing():
+		spell_cast_anim.stop()
+	spell_cast_anim.play(\"Casted\")
+	pass # Replace with function body.
+
+func get_spell_name(spell_list : Array):
+	var spell_name : String = \"*\"
+	for spell in spell_list:
+		spell_name += spell + \" \"
+	spell_name[spell_name.length() - 1] = \"*\"
+	return spell_name
+"
+
+[sub_resource type="StyleBoxFlat" id=8]
+bg_color = Color( 0.839216, 0.839216, 0.839216, 1 )
+
+[sub_resource type="StyleBoxFlat" id=9]
+bg_color = Color( 0.211765, 0.211765, 0.211765, 1 )
+
+[sub_resource type="GDScript" id=10]
+script/source = "extends ProgressBar
+
+export var cooldown_time : float = 1
+
+func _ready():
+	SpellManager.connect(\"cast_cooldown\", self, \"on_cast_cooldown\")
+	SpellManager.connect(\"cast_ready\", self, \"on_cast_ready\")
+	value = cooldown_time
+	max_value = cooldown_time
+	pass
+
+func on_cast_cooldown(cd):
+	value = cooldown_time - cd
+	pass # Replace with function body.
+
+func on_cast_ready():
+	value = cooldown_time
+	pass # Replace with function body.
+"
+
+[sub_resource type="Animation" id=11]
+length = 4.0
+tracks/0/type = "value"
+tracks/0/path = NodePath(".:percent_visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 1.5 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ 0.0, 1.0 ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath(".:self_modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 1.1, 2.1, 4 ),
+"transitions": PoolRealArray( 0.5, 1, 0.5, 1 ),
+"update": 0,
+"values": [ Color( 1, 1, 1, 0 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 0 ) ]
+}
+
+[sub_resource type="DynamicFont" id=12]
+size = 26
+use_filter = true
+font_data = ExtResource( 8 )
+
+[sub_resource type="Animation" id=13]
+length = 1.5
+tracks/0/type = "value"
+tracks/0/path = NodePath(".:rect_position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.5 ),
+"transitions": PoolRealArray( 0.5, 1 ),
+"update": 0,
+"values": [ Vector2( 0, 0 ), Vector2( 0, -30 ) ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath(".:self_modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 0.2, 1, 1.5 ),
+"transitions": PoolRealArray( 1, 1, 0.5, 1 ),
+"update": 0,
+"values": [ Color( 1, 1, 1, 0 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 0 ) ]
+}
+
+[sub_resource type="CapsuleShape" id=14]
+radius = 0.309456
+height = 0.718401
+
+[sub_resource type="SphereShape" id=15]
+radius = 12.0
+
+[node name="Wizard" type="KinematicBody" groups=[
+"Player",
+]]
+script = SubResource( 1 )
+speed = 5.0
+jump_speed = 10.0
+
+[node name="MovementCast" type="RayCast" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0 )
+enabled = true
+cast_to = Vector3( 0, 0, 2 )
+__meta__ = {
+"_editor_description_": ""
+}
+
+[node name="Visual" type="Spatial" parent="."]
+
+[node name="Mesh" type="MeshInstance" parent="Visual"]
+transform = Transform( -4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0, 0 )
+mesh = ExtResource( 5 )
+material/0 = null
+
+[node name="EnemyCast" type="RayCast" parent="Visual"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0 )
+enabled = true
+cast_to = Vector3( 0, 0, 1 )
+__meta__ = {
+"_editor_description_": ""
+}
+
+[node name="SpellPos" type="Position3D" parent="Visual"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.571308, 1.02158 )
+
+[node name="Anim" type="AnimationPlayer" parent="Visual"]
+autoplay = "Idle"
+anims/Idle = SubResource( 2 )
+anims/Walk = SubResource( 3 )
+
+[node name="CastView" type="Position3D" parent="Visual"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5 )
+
+[node name="CastView" type="CPUParticles" parent="Visual/CastView"]
+amount = 3
+lifetime = 2.5
+mesh = SubResource( 5 )
+flag_rotate_y = true
+gravity = Vector3( 0, 0, 0 )
+angle = 5.0
+scale_amount = 1.5
+scale_amount_curve = SubResource( 6 )
+
+[node name="GUI" type="CanvasLayer" parent="."]
+follow_viewport_enable = true
+
+[node name="GUI" type="Control" parent="GUI"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = SubResource( 7 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="PowerTree" parent="GUI/GUI" instance=ExtResource( 1 )]
+
+[node name="Jump" type="TextureButton" parent="GUI/GUI"]
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -174.053
+margin_top = -169.0
+margin_right = -20.0527
+margin_bottom = -15.0
+texture_normal = ExtResource( 4 )
+expand = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="SpellColdown" type="ProgressBar" parent="GUI/GUI"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -39.0
+margin_top = -50.0
+margin_right = 60.0
+margin_bottom = -42.0
+mouse_filter = 2
+custom_styles/fg = SubResource( 8 )
+custom_styles/bg = SubResource( 9 )
+max_value = 2.0
+value = 1.0
+percent_visible = false
+script = SubResource( 10 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="SpellLearned" type="Label" parent="GUI/GUI"]
+self_modulate = Color( 1, 1, 1, 0 )
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -585.087
+margin_top = 98.3738
+margin_right = 581.913
+margin_bottom = 169.374
+custom_fonts/font = ExtResource( 9 )
+text = "Word spell learned - Fa"
+align = 1
+percent_visible = 0.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Anim" type="AnimationPlayer" parent="GUI/GUI/SpellLearned"]
+anims/Learned = SubResource( 11 )
+
+[node name="Joystick" parent="GUI/GUI" instance=ExtResource( 2 )]
+margin_left = 121.043
+margin_top = 602.485
+margin_right = 122.043
+margin_bottom = 603.485
+
+[node name="SpellCast" type="Control" parent="GUI/GUI"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -94.3276
+margin_top = -86.9956
+margin_right = 123.672
+margin_bottom = -50.9956
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="SpellCast" type="Label" parent="GUI/GUI/SpellCast"]
+self_modulate = Color( 1, 1, 1, 0 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_fonts/font = SubResource( 12 )
+text = "Mur"
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Anim" type="AnimationPlayer" parent="GUI/GUI/SpellCast/SpellCast"]
+anims/Casted = SubResource( 13 )
+
+[node name="CapsuleCollider" type="CollisionShape" parent="."]
+transform = Transform( 1, 0, 0, 0, -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, 0.646041, 0 )
+shape = SubResource( 14 )
+
+[node name="EnemyDetection" type="Area" parent="."]
+
+[node name="CollisionShape" type="CollisionShape" parent="EnemyDetection"]
+shape = SubResource( 15 )
+
+[node name="Spells" parent="." instance=ExtResource( 6 )]
+spells_dic = {
+"Fa": ExtResource( 7 ),
+"FaDor": ExtResource( 11 ),
+"FaZur": ExtResource( 12 ),
+"Ign": ExtResource( 3 )
+}
+
+[node name="FakeShadow" parent="." instance=ExtResource( 13 )]
+activated = true
+object_movable = true
+target_node_path = NodePath("..")
+[connection signal="learn_spell" from="." to="GUI/GUI" method="_on_Wizard_learn_spell"]
+[connection signal="learn_spell" from="." to="GUI/GUI/PowerTree" method="_on_Wizard_learn_spell"]
+[connection signal="cast_spell" from="GUI/GUI/PowerTree" to="GUI/GUI" method="_on_PowerTree_cast_spell"]
+[connection signal="gui_input" from="GUI/GUI/Jump" to="." method="_on_Jump_gui_input"]
+[connection signal="analog_force" from="GUI/GUI/Joystick" to="." method="_on_Joystick_analog_force"]
+[connection signal="body_entered" from="EnemyDetection" to="." method="_on_EnemyDetection_body_entered"]
+[connection signal="body_exited" from="EnemyDetection" to="." method="_on_EnemyDetection_body_exited"]

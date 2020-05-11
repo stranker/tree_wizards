@@ -1,0 +1,32 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://Objects/Props/cube_tree.vox" type="ArrayMesh" id=1]
+[ext_resource path="res://Objects/Misc/FakeShadow.tscn" type="PackedScene" id=2]
+
+[sub_resource type="BoxShape" id=1]
+extents = Vector3( 0.211846, 1.11252, 0.196017 )
+
+[sub_resource type="BoxShape" id=2]
+extents = Vector3( 0.836019, 0.782862, 0.779775 )
+
+[node name="Tree" type="Spatial"]
+
+[node name="Mesh" type="MeshInstance" parent="."]
+use_in_baked_light = true
+mesh = ExtResource( 1 )
+material/0 = null
+
+[node name="StaticBody" type="StaticBody" parent="."]
+
+[node name="CollisionShape" type="CollisionShape" parent="StaticBody"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.29079, 0 )
+shape = SubResource( 1 )
+
+[node name="CollisionShape2" type="CollisionShape" parent="StaticBody"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.22173, 0 )
+shape = SubResource( 2 )
+
+[node name="FakeShadow" parent="." instance=ExtResource( 2 )]
+shadow_size = 2.5
+activated = true
+target_node_path = NodePath("../Mesh")
