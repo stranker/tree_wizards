@@ -1,8 +1,7 @@
-[gd_scene load_steps=9 format=2]
+[gd_scene load_steps=8 format=2]
 
 [ext_resource path="res://Objects/Enemies/goblin.vox" type="ArrayMesh" id=1]
 [ext_resource path="res://UI/HealthBar.tscn" type="PackedScene" id=2]
-[ext_resource path="res://Objects/Misc/FakeShadow.tscn" type="PackedScene" id=3]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends KinematicBody
@@ -181,12 +180,6 @@ one_shot = true
 
 [node name="HealthBar" parent="." instance=ExtResource( 2 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.34727, 0 )
-
-[node name="FakeShadow" parent="." instance=ExtResource( 3 )]
-shadow_size = 0.6
-activated = true
-object_movable = true
-target_node_path = NodePath("..")
 [connection signal="dead" from="." to="HealthBar" method="_on_Enemy_dead"]
 [connection signal="take_damage" from="." to="HealthBar" method="_on_Enemy_take_damage"]
 [connection signal="body_entered" from="PlayerDetector" to="." method="_on_PlayerDetector_body_entered"]

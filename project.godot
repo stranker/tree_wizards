@@ -45,11 +45,14 @@ enabled=PoolStringArray( "VoxImporter" )
 
 pointing/emulate_touch_from_mouse=true
 
+[physics]
+
+3d/physics_engine="GodotPhysics"
+3d/smooth_trimesh_collision=true
+
 [rendering]
 
 quality/driver/driver_name="GLES2"
 vram_compression/import_etc=true
-quality/directional_shadow/size.mobile=512
-quality/shadow_atlas/size.mobile=1024
 environment/default_environment="res://default_env.tres"
 quality/filters/anisotropic_filter_level=2

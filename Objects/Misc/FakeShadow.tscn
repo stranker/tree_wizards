@@ -50,7 +50,9 @@ top_radius = 0.5
 bottom_radius = 0.5
 height = 0.001
 
-[node name="FakeShadow" type="Spatial"]
+[node name="FakeShadow" type="Spatial" groups=[
+"FakeShadow",
+]]
 script = SubResource( 1 )
 
 [node name="RayCast" type="RayCast" parent="."]

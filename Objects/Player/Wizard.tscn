@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=2]
+[gd_scene load_steps=28 format=2]
 
 [ext_resource path="res://GUI/SpellTree.tscn" type="PackedScene" id=1]
 [ext_resource path="res://GUI/Joystick.tscn" type="PackedScene" id=2]
@@ -12,7 +12,6 @@
 [ext_resource path="res://Assets/Sprites/Aura.png" type="Texture" id=10]
 [ext_resource path="res://Objects/Spells/FaDor.tscn" type="PackedScene" id=11]
 [ext_resource path="res://Objects/Spells/FaZur.tscn" type="PackedScene" id=12]
-[ext_resource path="res://Objects/Misc/FakeShadow.tscn" type="PackedScene" id=13]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends KinematicBody
@@ -62,12 +61,15 @@ func _physics_process(delta):
 	else:
 		$Visual.rotation.y = lerp_angle($Visual.rotation.y, 0, delta * rotation_speed)
 		$Visual/EnemyCast.cast_to = $MovementCast.cast_to
-	if !is_on_floor():
-		velocity.y -= delta * gravity
 	velocity.x = movement_dir.x * speed if is_moving else 0
 	velocity.z = movement_dir.z * speed if is_moving else 0
+	if !is_on_floor():
+		apply_gravity(delta)
 	move_and_slide(velocity, Vector3.UP)
 	pass
+
+func apply_gravity(delta: float):
+	velocity += Vector3.DOWN * gravity * delta
 
 func _process(delta):
 	if is_moving:
@@ -125,6 +127,7 @@ func _on_Jump_gui_input(event):
 	if event is InputEventScreenTouch:
 		if event.pressed and is_on_floor():
 			velocity.y = jump_speed
+			is_jumping = true
 		if !event.pressed:
 			velocity.y = velocity.y * jump_cut_height
 	pass # Replace with function body.
@@ -312,9 +315,8 @@ tracks/1/keys = {
 "values": [ Color( 1, 1, 1, 0 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 0 ) ]
 }
 
-[sub_resource type="CapsuleShape" id=14]
-radius = 0.309456
-height = 0.718401
+[sub_resource type="SphereShape" id=14]
+radius = 0.41
 
 [sub_resource type="SphereShape" id=15]
 radius = 12.0
@@ -359,6 +361,11 @@ anims/Walk = SubResource( 3 )
 
 [node name="CastView" type="Position3D" parent="Visual"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5 )
+
+[node name="RayCast" type="RayCast" parent="Visual/CastView"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.88359, 0 )
+enabled = true
+cast_to = Vector3( 0, -50, 0 )
 
 [node name="CastView" type="CPUParticles" parent="Visual/CastView"]
 amount = 3
@@ -472,7 +479,7 @@ __meta__ = {
 anims/Casted = SubResource( 13 )
 
 [node name="CapsuleCollider" type="CollisionShape" parent="."]
-transform = Transform( 1, 0, 0, 0, -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, 0.646041, 0 )
+transform = Transform( 1, 0, 0, 0, -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, 0.4, 0 )
 shape = SubResource( 14 )
 
 [node name="EnemyDetection" type="Area" parent="."]
@@ -487,13 +494,8 @@ spells_dic = {
 "FaZur": ExtResource( 12 ),
 "Ign": ExtResource( 3 )
 }
-
-[node name="FakeShadow" parent="." instance=ExtResource( 13 )]
-activated = true
-object_movable = true
-target_node_path = NodePath("..")
-[connection signal="learn_spell" from="." to="GUI/GUI" method="_on_Wizard_learn_spell"]
 [connection signal="learn_spell" from="." to="GUI/GUI/PowerTree" method="_on_Wizard_learn_spell"]
+[connection signal="learn_spell" from="." to="GUI/GUI" method="_on_Wizard_learn_spell"]
 [connection signal="cast_spell" from="GUI/GUI/PowerTree" to="GUI/GUI" method="_on_PowerTree_cast_spell"]
 [connection signal="gui_input" from="GUI/GUI/Jump" to="." method="_on_Jump_gui_input"]
 [connection signal="analog_force" from="GUI/GUI/Joystick" to="." method="_on_Joystick_analog_force"]

@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=2]
+[gd_scene load_steps=11 format=2]
 
 [ext_resource path="res://Objects/Player/Wizard.tscn" type="PackedScene" id=1]
 [ext_resource path="res://Objects/Enemies/Enemy.tscn" type="PackedScene" id=2]
@@ -6,7 +6,6 @@
 [ext_resource path="res://Utility/MainCamera.tscn" type="PackedScene" id=4]
 [ext_resource path="res://Objects/Interactuable/SpellPapyrus.tscn" type="PackedScene" id=5]
 [ext_resource path="res://Assets/TileSet/Forest.tscn" type="PackedScene" id=6]
-[ext_resource path="res://Objects/Props/Tree.tscn" type="PackedScene" id=7]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends Spatial
@@ -27,6 +26,13 @@ func _on_ResetPos_button_down():
 
 func _on_ResetScene_button_down():
 	get_tree().reload_current_scene()
+	pass # Replace with function body.
+
+
+func _on_FakeShadows_button_down():
+	var fake_shadows = get_tree().get_nodes_in_group(\"FakeShadow\")
+	for shadow in fake_shadows:
+		shadow.visible = !shadow.visible
 	pass # Replace with function body.
 "
 
@@ -56,15 +62,14 @@ panorama = ExtResource( 3 )
 background_mode = 1
 background_sky = SubResource( 3 )
 background_color = Color( 0.278431, 0.698039, 0.823529, 1 )
-ambient_light_color = Color( 1, 0.921569, 0.505882, 1 )
+ambient_light_color = Color( 0.670588, 0.576471, 0.368627, 1 )
 fog_color = Color( 0.898039, 0.94902, 1, 1 )
 fog_sun_color = Color( 0.945098, 0.854902, 0.431373, 1 )
 fog_sun_amount = 0.44
 fog_depth_curve = 2.46229
 fog_transmit_curve = 4.0
 fog_height_curve = 2.54912
-glow_intensity = 1.39
-glow_bloom = 0.1
+glow_enabled = true
 adjustment_enabled = true
 
 [node name="Test" type="Spatial"]
@@ -78,7 +83,7 @@ smooth_speed = 0.1
 target_path = NodePath("../Wizard")
 
 [node name="Wizard" parent="." instance=ExtResource( 1 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.935034, 4.60904, -1.62347 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.316487, 4.60904, 1.10688 )
 speed = 7.0
 jump_speed = 22.0
 gravity = 100.0
@@ -97,11 +102,22 @@ __meta__ = {
 }
 
 [node name="ResetPos" type="Button" parent="GUI"]
-margin_left = 173.449
-margin_top = -3.34036
-margin_right = 315.449
-margin_bottom = 51.6596
+margin_left = 157.159
+margin_top = 0.732165
+margin_right = 299.159
+margin_bottom = 55.7321
 text = "RESET POS"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="FakeShadows" type="Button" parent="GUI"]
+visible = false
+margin_left = 316.802
+margin_top = -0.0823414
+margin_right = 458.802
+margin_bottom = 54.9176
+text = "Fake Shadows"
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -159,57 +175,40 @@ __meta__ = {
 }
 
 [node name="Enemy" parent="." instance=ExtResource( 2 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -6.55575, 2.76053, -16.866 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -23.7331, 2.76053, 24.5236 )
 speed = 10.0
 max_force = 4.0
 mass = 1.7
 
 [node name="Enemy2" parent="." instance=ExtResource( 2 )]
-transform = Transform( 0.966345, 0, -0.257251, 0, 1, 0, 0.257251, 0, 0.966345, 10.8759, 2.26317, -14.8201 )
+transform = Transform( 0.966345, 0, -0.257251, 0, 1, 0, 0.257251, 0, 0.966345, -23.9623, 2.26317, -1.02436 )
 speed = 10.0
 max_force = 4.0
 mass = 1.7
 
 [node name="SpellPapyrus" parent="." instance=ExtResource( 5 )]
-transform = Transform( 0.274194, 0, -0.961674, 0, 1, 0, 0.961674, 0, 0.274194, 11.3248, 2.38205, 8.64456 )
+transform = Transform( 0.274194, 0, -0.961674, 0, 1, 0, 0.961674, 0, 0.274194, -10.9595, 1.6705, 11.2826 )
 speed_rotation = 2.0
 spell_learn = "Fa"
 
-[node name="Tree" parent="." instance=ExtResource( 7 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -7.63645, 2.04428, 4.56893 )
-
-[node name="Tree2" parent="." instance=ExtResource( 7 )]
-transform = Transform( 0.925613, 0, 0.378471, 0, 1, 0, -0.378471, 0, 0.925613, 6.21624, 2.04428, -7.92766 )
-
-[node name="Tree3" parent="." instance=ExtResource( 7 )]
-transform = Transform( 0.259814, 0, -0.965659, 0, 1, 0, 0.965659, 0, 0.259814, -0.330085, 2.02593, 11.4371 )
-
-[node name="Tree4" parent="." instance=ExtResource( 7 )]
-transform = Transform( 0.259814, 0, -0.965659, 0, 1, 0, 0.965659, 0, 0.259814, -18.8973, 1.97851, -5.94425 )
-
-[node name="Tree5" parent="." instance=ExtResource( 7 )]
-transform = Transform( -0.713385, 0, -0.700772, 0, 1, 0, 0.700772, 0, -0.713385, 13.9426, 2.00204, 11.2456 )
-
-[node name="Tree6" parent="." instance=ExtResource( 7 )]
-transform = Transform( -0.713385, 0, -0.700772, 0, 1, 0, 0.700772, 0, -0.713385, -0.209352, 2.03639, -25.3861 )
-
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource( 4 )
-
-[node name="DirectionalLight" type="DirectionalLight" parent="."]
-transform = Transform( 1, 0, 0, 0, 0.286842, 0.957978, 0, -0.957978, 0.286842, 8.06286, 11.3956, 0 )
-light_color = Color( 1, 0.905882, 0.286275, 1 )
-light_energy = 0.2
-light_indirect_energy = 0.0
-shadow_color = Color( 0.462745, 0.462745, 0.462745, 1 )
-directional_shadow_mode = 0
-directional_shadow_depth_range = 1
 
 [node name="Forest" parent="." groups=[
 "Map",
 ] instance=ExtResource( 6 )]
 transform = Transform( 0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 0, 0, 0 )
+
+[node name="DirectionalLight" type="DirectionalLight" parent="."]
+transform = Transform( 0.909376, 0.379865, -0.169524, 0.0271835, 0.352395, 0.935457, 0.415087, -0.85529, 0.310133, -10.0705, 13.2299, 6.89412 )
+light_color = Color( 0.713726, 0.494118, 0.266667, 1 )
+light_energy = 0.7
+light_specular = 0.0
+shadow_enabled = true
+shadow_color = Color( 0.372549, 0.372549, 0.372549, 1 )
+directional_shadow_depth_range = 1
 [connection signal="button_down" from="GUI/ResetScene" to="." method="_on_ResetScene_button_down"]
 [connection signal="button_down" from="GUI/ResetPos" to="." method="_on_ResetPos_button_down"]
+[connection signal="button_down" from="GUI/FakeShadows" to="." method="_on_FakeShadows_button_down"]
 [connection signal="button_down" from="GUI/Debug/DebugPanel/ClearButton" to="GUI/Debug" method="_on_ClearButton_button_down"]
 [connection signal="button_down" from="GUI/Debug/ConsoleButton" to="GUI/Debug" method="_on_ConsoleButton_button_down"]

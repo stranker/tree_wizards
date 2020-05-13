@@ -1,7 +1,6 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://Objects/Interactuable/papyrus.vox" type="ArrayMesh" id=1]
-[ext_resource path="res://Objects/Misc/FakeShadow.tscn" type="PackedScene" id=2]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends Spatial
@@ -51,6 +50,7 @@ transform = Transform( 1, 0, 0, 0, 0.87322, -0.487326, 0, 0.487326, 0.87322, 0, 
 
 [node name="MeshInstance" type="MeshInstance" parent="Spatial"]
 transform = Transform( 0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, -0.453042, 0.0351236 )
+use_in_baked_light = true
 mesh = ExtResource( 1 )
 material/0 = null
 
@@ -63,10 +63,4 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.484194, 0 )
 
 [node name="CollisionShape" type="CollisionShape" parent="Area"]
 shape = SubResource( 3 )
-
-[node name="FakeShadow" parent="." instance=ExtResource( 2 )]
-shadow_size = 0.7
-activated = true
-object_movable = true
-target_node_path = NodePath("../Spatial/MeshInstance")
 [connection signal="body_entered" from="Area" to="." method="_on_Area_body_entered"]
