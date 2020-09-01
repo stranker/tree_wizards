@@ -132,6 +132,7 @@ height = 2.0
 script = SubResource( 1 )
 damage = 2
 spell_name = "FaZur"
+mana_cost = 20
 spell_type = 1
 spell_range = 5.0
 area_effect = 2.0

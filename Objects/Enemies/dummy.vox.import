@@ -1,0 +1,16 @@
+[remap]
+
+importer="MagicaVoxel.With.Extensions"
+type="Mesh"
+path="res://.import/dummy.vox-5eeb5b25e00f665f4429178f744e26e7.mesh"
+
+[deps]
+
+source_file="res://Objects/Enemies/dummy.vox"
+dest_files=[ "res://.import/dummy.vox-5eeb5b25e00f665f4429178f744e26e7.mesh" ]
+
+[params]
+
+Scale=0.1
+GreedyMeshGenerator=true
+SnapToGround=false

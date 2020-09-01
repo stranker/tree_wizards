@@ -1,0 +1,114 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://Assets/Fonts/Iron Latch.TTF" type="DynamicFontData" id=1]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Control
+
+var mana : float = 0
+export var tween_scale : float = 0.4
+
+var tweeining : bool = false
+
+func set_target(target):
+	mana = target.max_mana
+	$Bar.value = mana
+	$Bar.max_value = mana
+	target.connect(\"on_mana_change\", self, \"on_mana_change\")
+	pass
+
+func on_mana_change(value):
+	mana = value
+	$Bar/Label.text = str(int(mana))
+	if !tweeining:
+		tweeining = true
+		mana_tween()
+	pass
+
+func _process(delta):
+	#Bar.value = mana if $Bar.value != mana else lerp($Bar.value, mana, 10)
+	pass
+
+func mana_tween():
+	$Tween.stop_all()
+	$Tween.remove_all()
+	$Tween.interpolate_property($Bar, \"value\", $Bar.value, mana, tween_scale, Tween.TRANS_LINEAR, Tween.EASE_IN)
+	$Tween.start()
+
+
+func _on_Tween_tween_all_completed():
+	tweeining = false
+	pass # Replace with function body.
+"
+
+[sub_resource type="StyleBoxFlat" id=2]
+bg_color = Color( 0.0941176, 0.152941, 0.709804, 1 )
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color( 0.0823529, 0.12549, 0.572549, 1 )
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id=3]
+bg_color = Color( 0.152941, 0.152941, 0.152941, 0.784314 )
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color( 0.0862745, 0.0862745, 0.0862745, 0.784314 )
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+expand_margin_left = 3.0
+expand_margin_right = 3.0
+expand_margin_top = 3.0
+expand_margin_bottom = 3.0
+
+[sub_resource type="DynamicFont" id=4]
+size = 40
+use_filter = true
+font_data = ExtResource( 1 )
+
+[node name="ManaBar" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -977.0
+margin_bottom = -679.0
+script = SubResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Bar" type="ProgressBar" parent="."]
+margin_right = 300.0
+margin_bottom = 38.0
+custom_styles/fg = SubResource( 2 )
+custom_styles/bg = SubResource( 3 )
+step = 0.1
+value = 60.0
+percent_visible = false
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="Bar"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -150.0
+margin_top = -18.0
+margin_right = 150.0
+margin_bottom = 18.0
+custom_fonts/font = SubResource( 4 )
+text = "100"
+align = 1
+valign = 1
+
+[node name="Tween" type="Tween" parent="."]
+[connection signal="tween_all_completed" from="Tween" to="." method="_on_Tween_tween_all_completed"]

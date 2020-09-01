@@ -26,7 +26,7 @@ signal dead()
 signal take_damage(value)
 
 func _ready():
-	$HealthBar.set_health(health)
+	$HealthBar.set_target(self)
 	initial_pos = global_transform.origin
 	pass
 
@@ -181,7 +181,6 @@ one_shot = true
 [node name="HealthBar" parent="." instance=ExtResource( 2 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.34727, 0 )
 [connection signal="dead" from="." to="HealthBar" method="_on_Enemy_dead"]
-[connection signal="take_damage" from="." to="HealthBar" method="_on_Enemy_take_damage"]
 [connection signal="body_entered" from="PlayerDetector" to="." method="_on_PlayerDetector_body_entered"]
 [connection signal="body_exited" from="PlayerDetector" to="." method="_on_PlayerDetector_body_exited"]
 [connection signal="timeout" from="FreezeTime" to="." method="_on_FreezeTime_timeout"]

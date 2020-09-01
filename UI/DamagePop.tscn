@@ -1,0 +1,98 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://Assets/Fonts/Iron Latch.TTF" type="DynamicFontData" id=1]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Spatial
+
+onready var camera : Camera = get_viewport().get_camera()
+
+export var offset : Vector2 = Vector2.ZERO
+
+func _ready():
+	tween()
+
+func tween():
+	var end_pos = Vector2(rand_range(-40, 40), 0)
+	$Tween.interpolate_property($Anchor/Control, 'rect_position', $Anchor/Control.rect_position, end_pos, 0.5, Tween.TRANS_EXPO, Tween.EASE_OUT)
+	$Tween.start()
+	pass
+
+func _process(delta):
+	update_position()
+	pass
+
+func update_position():
+	var position = camera.unproject_position(global_transform.origin)
+	$Anchor.rect_global_position = position + offset
+	pass
+
+func set_damage(val):
+	$Anchor/Control/Damage.text = str(val)
+	$Anim.play(\"Pop\")
+
+func _on_Anim_animation_finished(anim_name):
+	queue_free()
+	pass # Replace with function body.
+"
+
+[sub_resource type="DynamicFont" id=2]
+size = 36
+use_filter = true
+font_data = ExtResource( 1 )
+
+[sub_resource type="Animation" id=3]
+length = 1.5
+tracks/0/type = "value"
+tracks/0/path = NodePath("Anchor/Control/Damage:rect_position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.5, 1.3 ),
+"transitions": PoolRealArray( 0.5, 2, 1 ),
+"update": 0,
+"values": [ Vector2( 0, 0 ), Vector2( 0, -19.6001 ), Vector2( 0, 25.692 ) ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Anchor/Control/Damage:self_modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 0.1, 0.7, 1.3 ),
+"transitions": PoolRealArray( 1, 1, 1, 1 ),
+"update": 0,
+"values": [ Color( 1, 1, 1, 0 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 0 ) ]
+}
+
+[node name="DamagePop" type="Spatial"]
+script = SubResource( 1 )
+
+[node name="Anchor" type="Control" parent="."]
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Control" type="Control" parent="Anchor"]
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Damage" type="Label" parent="Anchor/Control"]
+self_modulate = Color( 1, 1, 1, 0 )
+margin_right = 48.0
+margin_bottom = 38.0
+custom_fonts/font = SubResource( 2 )
+text = "99"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Anim" type="AnimationPlayer" parent="."]
+anims/Pop = SubResource( 3 )
+
+[node name="Tween" type="Tween" parent="."]
+[connection signal="animation_finished" from="Anim" to="." method="_on_Anim_animation_finished"]

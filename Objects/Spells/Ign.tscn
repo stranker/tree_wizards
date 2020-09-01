@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=2]
 
-[sub_resource type="GDScript" id=5]
+[sub_resource type="GDScript" id=1]
 script/source = "extends \"res://Objects/Spells/DirectionalSpell.gd\"
 
 func _on_Area_body_entered(body):
@@ -37,8 +37,11 @@ surfaces/0 = {
 }
 
 [node name="Ign" type="Spatial"]
-script = SubResource( 5 )
+script = SubResource( 1 )
+damage = 2
 spell_name = "Ign"
+mana_cost = 10
+speed = 15.0
 
 [node name="Area" type="Area" parent="."]
 

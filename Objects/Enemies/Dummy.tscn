@@ -1,0 +1,235 @@
+[gd_scene load_steps=13 format=2]
+
+[ext_resource path="res://UI/HealthBar.tscn" type="PackedScene" id=1]
+[ext_resource path="res://Objects/Enemies/dummy.vox" type="ArrayMesh" id=2]
+[ext_resource path="res://Objects/Props/smoke.vox" type="ArrayMesh" id=3]
+[ext_resource path="res://Objects/Misc/SelectionCircle.tscn" type="PackedScene" id=4]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends KinematicBody
+
+onready var anim = $Anim
+export var health : int = 5
+export var killeable : bool = false
+var initial_health : int = 0
+var damage_scene = preload(\"res://UI/DamagePop.tscn\")
+
+signal take_damage(value)
+
+func _ready():
+	$HealthBar.set_target(self)
+	initial_health = health
+	pass
+
+func _input(event):
+	if event is InputEventKey:
+		if event.scancode == KEY_UP and !event.echo:
+			take_damage(1, Vector2.ZERO)
+
+func take_damage(damage, knockback_dir):
+	health -= damage
+	emit_signal(\"take_damage\", damage)
+	pop_damage(damage)
+	if health <= 0:
+		health = 0
+		if killeable:
+			anim.play(\"Dead\")
+	else:
+		anim.play(\"Hit\")
+	if !killeable:
+		$HealthTimer.start()
+	pass
+
+func pop_damage(val):
+	var damage_pop = damage_scene.instance()
+	get_tree().root.add_child(damage_pop)
+	damage_pop.set_damage(val)
+	damage_pop.global_transform.origin = $DamagePos.global_transform.origin
+
+func _on_HealthTimer_timeout():
+	health = initial_health 
+	$HealthBar._on_Enemy_dead()
+	pass # Replace with function body.
+
+func freeze(damage):
+	take_damage(damage, Vector3.ZERO)
+	pass
+
+func set_select(val):
+	$Selection.set_select(val)
+
+func _on_Anim_animation_finished(anim_name):
+	if anim_name == \"Dead\":
+		$Smoke.emitting = true
+		$Skin.visible = false
+		$ReviveTimer.start()
+	pass # Replace with function body.
+
+
+func _on_ReviveTimer_timeout():
+	$Skin.visible = true
+	anim.play(\"Idle\")
+	health = initial_health
+	$HealthBar._on_Enemy_dead()
+	pass # Replace with function body.
+"
+
+[sub_resource type="Animation" id=2]
+resource_name = "Dead"
+length = 0.8
+tracks/0/type = "value"
+tracks/0/path = NodePath("Skin:rotation_degrees")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.1, 0.4, 0.6 ),
+"transitions": PoolRealArray( 1, 1, 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ), Vector3( -6.325, 3.88039e-07, 27.344 ), Vector3( -3.37039, -5.3553, 85.2497 ), Vector3( 5.6063, -5.37178, 84.4076 ) ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Skin:translation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 0.1, 0.4 ),
+"transitions": PoolRealArray( 1, 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ), Vector3( -0.204221, 0.281862, 0 ), Vector3( -0.204221, -0.0608731, 0 ) ]
+}
+
+[sub_resource type="Animation" id=3]
+length = 0.6
+tracks/0/type = "value"
+tracks/0/path = NodePath("Skin:rotation_degrees")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.1, 0.4, 0.6 ),
+"transitions": PoolRealArray( 1, 0.5, 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ), Vector3( 24.7374, 9.10325, 20.9523 ), Vector3( 3.99093, -3.33554, -16.6928 ), Vector3( 0, 0, 0 ) ]
+}
+
+[sub_resource type="Animation" id=4]
+resource_name = "Idle"
+length = 0.1
+tracks/0/type = "value"
+tracks/0/path = NodePath("Skin:rotation_degrees")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0 ),
+"transitions": PoolRealArray( 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ) ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Skin:translation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0 ),
+"transitions": PoolRealArray( 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ) ]
+}
+
+[sub_resource type="CapsuleShape" id=5]
+radius = 0.4
+height = 0.838727
+
+[sub_resource type="SpatialMaterial" id=6]
+flags_transparent = true
+flags_unshaded = true
+flags_do_not_receive_shadows = true
+flags_disable_ambient_light = true
+vertex_color_use_as_albedo = true
+vertex_color_is_srgb = true
+
+[sub_resource type="Curve" id=7]
+_data = [ Vector2( 0, 1 ), 0.0, 0.195689, 0, 0, Vector2( 1, 0.203409 ), -1.75977, 0.0, 0, 0 ]
+
+[sub_resource type="Gradient" id=8]
+offsets = PoolRealArray( 0, 0.490066, 0.81457, 1 )
+colors = PoolColorArray( 1, 0.945068, 0.859375, 1, 0.992188, 0.902107, 0.66275, 0.953642, 0.996078, 0.941176, 0.8, 0.682353, 1, 0.988235, 0.956863, 0 )
+
+[node name="Dummy" type="KinematicBody" groups=[
+"Enemy",
+]]
+script = SubResource( 1 )
+
+[node name="Anim" type="AnimationPlayer" parent="."]
+autoplay = "Idle"
+anims/Dead = SubResource( 2 )
+anims/Hit = SubResource( 3 )
+anims/Idle = SubResource( 4 )
+
+[node name="Skin" type="Spatial" parent="."]
+
+[node name="Mesh" type="MeshInstance" parent="Skin"]
+transform = Transform( -4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, -1.27953, 0 )
+mesh = ExtResource( 2 )
+material/0 = null
+
+[node name="HealthTimer" type="Timer" parent="."]
+wait_time = 2.5
+one_shot = true
+
+[node name="CollisionShape" type="CollisionShape" parent="."]
+transform = Transform( 1, 0, 0, 0, -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, 0.760693, 0 )
+shape = SubResource( 5 )
+
+[node name="HealthBar" parent="." instance=ExtResource( 1 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65456, 0 )
+
+[node name="Smoke" type="CPUParticles" parent="."]
+transform = Transform( -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, 0.0775599, 0.402064, 0 )
+material_override = SubResource( 6 )
+cast_shadow = 0
+emitting = false
+amount = 24
+one_shot = true
+preprocess = 0.2
+explosiveness = 0.95
+lifetime_randomness = 0.2
+mesh = ExtResource( 3 )
+flag_align_y = true
+spread = 90.0
+gravity = Vector3( 3, 0, 0 )
+initial_velocity = 2.5
+initial_velocity_random = 1.0
+angular_velocity = 20.0
+radial_accel = 1.0
+radial_accel_random = 1.0
+tangential_accel = 5.0
+tangential_accel_random = 1.0
+damping = 2.0
+damping_random = 0.2
+angle = 20.0
+scale_amount = 1.5
+scale_amount_curve = SubResource( 7 )
+color_ramp = SubResource( 8 )
+
+[node name="ReviveTimer" type="Timer" parent="."]
+wait_time = 2.0
+one_shot = true
+
+[node name="DamagePos" type="Position3D" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7578, 0 )
+
+[node name="Selection" parent="." instance=ExtResource( 4 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.078191, 0 )
+[connection signal="animation_finished" from="Anim" to="." method="_on_Anim_animation_finished"]
+[connection signal="timeout" from="HealthTimer" to="." method="_on_HealthTimer_timeout"]
+[connection signal="timeout" from="ReviveTimer" to="." method="_on_ReviveTimer_timeout"]

@@ -33,7 +33,8 @@ func check_spell_info(casted_words):
 	var spell_info = null
 	for spell in spells:
 		if !spell_info and spell.spell_name == spell_name:
-			spell_info = spell.get_spell_info()
+			if spell.has_method("get_spell_info"):
+				spell_info = spell.get_spell_info()
 	if !spell_info:
 		return
 	emit_signal("spell_info", spell_info.spell_range, spell_info.effect_area)
@@ -87,7 +88,7 @@ func cast_spell(spell_to_cast : Spatial):
 		SpellType.Target:
 			cast_target_spell(spell, spell_pos)
 	#can_throw_spell = false
-	emit_signal("spell_casted")
+	emit_signal("spell_casted", spell)
 	pass
 
 func cast_directional_spell(spell, spell_pos):

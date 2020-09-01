@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=4 format=2]
 
 [ext_resource path="res://UI/HealthBarHeart.tscn" type="PackedScene" id=1]
+[ext_resource path="res://UI/HealthBar2d.tscn" type="PackedScene" id=2]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends Spatial
@@ -13,22 +14,31 @@ func _process(delta):
 	update_position()
 	pass
 
+func set_target(target):
+	$Anchor/HealthBar2d.set_target(target)
+	pass
+
 func update_position():
 	var position = camera.unproject_position(global_transform.origin)
 	$Anchor.rect_global_position = position + offset
 	pass
 
 func set_health(value):
-	$Anchor/HealthBarHeart.set_health(value)
+	#$Anchor/HealthBarHeart.set_health(value)
+	$Anchor/HealthBar2d.set_health(value)
 
 func _on_Enemy_take_damage(value):
-	$Anchor/HealthBarHeart.take_damage(value)
+	#$Anchor/HealthBarHeart.take_damage(value)
 	pass # Replace with function body.
-
 
 func _on_Enemy_dead():
-	$Anchor/HealthBarHeart.reset()
+	#$Anchor/HealthBarHeart.reset()
+	$Anchor/HealthBar2d.reset()
 	pass # Replace with function body.
+
+func on_health_change(value):
+	$Anchor/HealthBarHeart.take_damage(value)
+	pass
 "
 
 [node name="HealthBar" type="Spatial"]
@@ -43,7 +53,13 @@ __meta__ = {
 }
 
 [node name="HealthBarHeart" parent="Anchor" instance=ExtResource( 1 )]
+visible = false
 anchor_left = 0.5
 anchor_right = 0.5
 margin_left = -60.0
 margin_right = 60.0
+
+[node name="HealthBar2d" parent="Anchor" instance=ExtResource( 2 )]
+margin_left = -59.4588
+margin_right = 60.5412
+margin_bottom = 20.0

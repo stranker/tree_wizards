@@ -30,17 +30,11 @@ script/source = "extends ProgressBar
 onready var player_camera : Camera = get_tree().root.get_node(\"Test/MainCamera\")
 
 export var offset : Vector2 = Vector2(0,2)
+export var tween_scale : float = 0.2
 
 var enemy = null
 
-
-func set_health(health):
-	value = health
-	max_value = value
-
-func take_damage(dmg):
-	value -= dmg
-	pass
+var health : int = 0
 
 func set_target(target):
 	enemy = target
@@ -48,15 +42,26 @@ func set_target(target):
 	enemy.connect(\"take_damage\", self, \"take_damage\")
 	pass
 
-func _process(delta):
-	if !enemy:
-		return
-	update_position()
+func set_health(val):
+	health = val
+	max_value = health
+	value = health
 	pass
 
-func update_position():
-	var pos = player_camera.unproject_position(enemy.transform.origin)
-	rect_global_position = pos + offset
+func take_damage(dmg):
+	health -= dmg
+	tween_health()
+	pass
+
+func reset():
+	health = max_value
+	tween_health()
+	pass
+
+func tween_health():
+	$Tween.remove_all()
+	$Tween.interpolate_property(self, 'value', value, health, tween_scale, Tween.TRANS_LINEAR, Tween.EASE_OUT)
+	$Tween.start()
 	pass
 "
 
@@ -75,3 +80,5 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 offset = Vector2( -70, -125 )
+
+[node name="Tween" type="Tween" parent="."]

@@ -105,6 +105,7 @@ tracks/5/keys = {
 [node name="FaDor" type="Spatial"]
 script = SubResource( 1 )
 spell_name = "FaDor"
+mana_cost = 40
 spell_type = 2
 
 [node name="Visual" type="Spatial" parent="."]

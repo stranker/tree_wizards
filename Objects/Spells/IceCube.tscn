@@ -1,0 +1,160 @@
+[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://Objects/Props/ice_cube.vox" type="ArrayMesh" id=1]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Spatial
+
+export var ice_duration : float = 3
+var break_duration = 1.0
+
+var rotation_increment = 2
+var tween_duration = 0.1
+var rand_rotation = 5
+
+
+func _ready():
+	randomize()
+	$Timer.wait_time = ice_duration - break_duration
+	$Timer.start()
+	pass
+
+func ice_break():
+	new_tween()
+	$Anim.play(\"Break\")
+	pass
+
+func new_tween():
+	var new_rotation : Vector3 = $Visual.rotation_degrees
+	new_rotation.x += rand_range(-rand_rotation, rand_rotation) * rotation_increment
+	new_rotation.y += rand_range(-rand_rotation, rand_rotation) * rotation_increment
+	new_rotation.z += rand_range(-rand_rotation, rand_rotation) * rotation_increment
+	$Tween.stop_all()
+	$Tween.remove_all()
+	$Tween.interpolate_property($Visual, 'rotation_degrees', $Visual.rotation_degrees, new_rotation, tween_duration, Tween.TRANS_LINEAR,Tween.EASE_OUT)
+	$Tween.start()
+	pass
+
+
+func _on_Tween_tween_all_completed():
+	break_duration -= tween_duration
+	if break_duration < 0.4:
+		rotation_increment = 6
+		tween_duration = 0.1
+	new_tween()
+	pass
+
+
+func _on_Anim_animation_finished(anim_name):
+	$IceParticles.emitting = true
+	$Tween.stop_all()
+	yield(get_tree().create_timer(1.2), \"timeout\")
+	queue_free()
+	pass # Replace with function body.
+
+
+func _on_Timer_timeout():
+	ice_break()
+	pass # Replace with function body.
+"
+
+[sub_resource type="SpatialMaterial" id=2]
+flags_transparent = true
+vertex_color_use_as_albedo = true
+params_diffuse_mode = 4
+params_specular_mode = 3
+albedo_color = Color( 1, 1, 1, 0.235294 )
+
+[sub_resource type="Animation" id=3]
+resource_name = "Break"
+tracks/0/type = "value"
+tracks/0/path = NodePath("Visual/Mesh:material/0:albedo_color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1 ),
+"transitions": PoolRealArray( 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ),
+"update": 0,
+"values": [ Color( 1, 1, 1, 0.235294 ), Color( 1, 1, 1, 0.627451 ), Color( 1, 1, 1, 0.235294 ), Color( 1, 1, 1, 0.627451 ), Color( 1, 1, 1, 0.235294 ), Color( 1, 1, 1, 0.627451 ), Color( 1, 1, 1, 0.235294 ), Color( 1, 1, 1, 0.627451 ), Color( 1, 1, 1, 0.235294 ), Color( 1, 1, 1, 0.627451 ) ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Visual:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 0.7, 0.9, 1 ),
+"transitions": PoolRealArray( 1, 0.5, 2, 1 ),
+"update": 0,
+"values": [ Vector3( 1, 1, 1 ), Vector3( 1, 1, 1 ), Vector3( 1.2, 1.2, 1.2 ), Vector3( 0, 0, 0 ) ]
+}
+
+[sub_resource type="SpatialMaterial" id=4]
+flags_transparent = true
+flags_do_not_receive_shadows = true
+vertex_color_use_as_albedo = true
+params_diffuse_mode = 4
+params_specular_mode = 3
+albedo_color = Color( 0.356863, 0.615686, 0.756863, 1 )
+
+[sub_resource type="CubeMesh" id=5]
+material = SubResource( 4 )
+
+[sub_resource type="Curve" id=6]
+_data = [ Vector2( 0, 0.954545 ), 0.0, 0.0, 0, 0, Vector2( 0.994253, 0.0272727 ), -2.33506, 0.0, 0, 0 ]
+
+[sub_resource type="Gradient" id=7]
+colors = PoolColorArray( 1, 1, 1, 1, 1, 1, 1, 0 )
+
+[node name="IceCube" type="Spatial"]
+script = SubResource( 1 )
+
+[node name="Visual" type="Spatial" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.809296, 0 )
+
+[node name="Mesh" type="MeshInstance" parent="Visual"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.8594, 0 )
+mesh = ExtResource( 1 )
+material/0 = SubResource( 2 )
+
+[node name="Anim" type="AnimationPlayer" parent="."]
+anims/Break = SubResource( 3 )
+
+[node name="Tween" type="Tween" parent="."]
+
+[node name="Camera" type="Camera" parent="."]
+transform = Transform( 1, 0, 0, 0, 0.970649, 0.240499, 0, -0.240499, 0.970649, 0, 1.82387, 4.44711 )
+
+[node name="Timer" type="Timer" parent="."]
+one_shot = true
+
+[node name="IceParticles" type="CPUParticles" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.287297, 0 )
+emitting = false
+amount = 16
+one_shot = true
+explosiveness = 0.9
+randomness = 1.0
+lifetime_randomness = 0.5
+mesh = SubResource( 5 )
+emission_shape = 3
+emission_points = PoolVector3Array( 0.154693, 0.862616, 0.0233901, 0.0251822, 0.412544, -0.382937, 0.277094, 0.581066, -0.178127, 0.0131645, 1.26435, -0.552721, 0.669295, 1.38603, 0.433011, -0.558452, -0.0834867, 0.164367, 0.721972, 0.649558, -0.340203, 0.519543, 0.396845, -0.311338, -0.164652, 1.35027, -0.0459718, -0.20212, 0.142865, -0.459191, 0.0583865, 0.154535, -0.479152, -0.64582, 0.515291, 0.212792, 0.0127916, 0.425072, 0.0515254, -0.256275, 1.01819, 0.573374, -0.773257, 1.44235, -0.310477, 0.0873985, 1.38617, 0.695367 )
+flag_align_y = true
+direction = Vector3( 0, 1, 0 )
+spread = 90.0
+gravity = Vector3( 0, -6, 0 )
+initial_velocity = 8.0
+initial_velocity_random = 0.8
+damping = 5.0
+angle = 50.0
+angle_random = 1.0
+scale_amount = 0.1
+scale_amount_random = 0.09
+scale_amount_curve = SubResource( 6 )
+color_ramp = SubResource( 7 )
+[connection signal="animation_finished" from="Anim" to="." method="_on_Anim_animation_finished"]
+[connection signal="tween_all_completed" from="Tween" to="." method="_on_Tween_tween_all_completed"]
+[connection signal="timeout" from="Timer" to="." method="_on_Timer_timeout"]

@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=2]
+[gd_scene load_steps=34 format=2]
 
 [ext_resource path="res://GUI/SpellTree.tscn" type="PackedScene" id=1]
 [ext_resource path="res://GUI/Joystick.tscn" type="PackedScene" id=2]
@@ -12,20 +12,29 @@
 [ext_resource path="res://Assets/Sprites/Aura.png" type="Texture" id=10]
 [ext_resource path="res://Objects/Spells/FaDor.tscn" type="PackedScene" id=11]
 [ext_resource path="res://Objects/Spells/FaZur.tscn" type="PackedScene" id=12]
+[ext_resource path="res://UI/ManaBar.tscn" type="PackedScene" id=13]
+[ext_resource path="res://Objects/Misc/ArrowPointer.tscn" type="PackedScene" id=14]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends KinematicBody
 
 export var velocity : Vector3
 export var speed : float = 500.0
-export var movement_dir : Vector3
-export var rotation_dir : Vector2
-export var is_moving : bool = false
-export var rotation_speed : float = 8
+var movement_dir : Vector3
+var rotation_dir : Vector2
+var is_moving : bool = false
+export var rotation_speed : float = 15
+export var enemy_rotation_speed : float = 20
 export var jump_speed : float = 600
 export var gravity : float = 200
 export var jump_cut_height : float = 0.5
-export var is_jumping : bool = false
+var is_jumping : bool = false
+export var max_mana : int = 100
+export var mana_regen : float = 2
+
+var visual_dir : Vector3
+var keyboard_movement : Vector2 = Vector2.ZERO
+var mana : float = 100
 
 export var spell_dir : Vector3
 
@@ -36,7 +45,12 @@ var anim = \"\"
 
 var pos : Vector3 = Vector3.ZERO
 
+var is_android : bool = true
+
 signal learn_spell(spell_name)
+signal on_mana_change(value)
+
+var current_enemy = null
 
 func _ready():
 	set_physics_process(true)
@@ -46,21 +60,23 @@ func _ready():
 	SpellManager.connect(\"spell_info\", self, \"on_spell_info\")
 	SpellManager.connect(\"spell_casted\", self, \"on_spell_casted\")
 	$Visual/CastView.hide()
+	$GUI/GUI/ManaBar.set_target(self)
+	GameManager.wizard = self
+	check_android()
+
+	pass
+
+func check_android():
+	if OS.get_name() == \"Windows\":
+		is_android = false
+	if !is_android:
+		$GUI/GUI.remove_android_hud()
 	pass
 
 func _physics_process(delta):
 	if is_moving:
-		rotation.y = lerp_angle(rotation.y, rotation_dir.angle(), delta * rotation_speed)
 		movement_dir = get_forward()
 		spell_dir = spell_direction()
-	if !enemy_list.empty():
-		var enemy = closest_enemy()
-		if enemy:
-			var dir = (enemy.global_transform.origin - transform.origin).normalized()
-			$Visual.rotation.y = lerp_angle($Visual.rotation.y, -rotation.y + Vector2(dir.z,dir.x).angle(), delta * rotation_speed)
-	else:
-		$Visual.rotation.y = lerp_angle($Visual.rotation.y, 0, delta * rotation_speed)
-		$Visual/EnemyCast.cast_to = $MovementCast.cast_to
 	velocity.x = movement_dir.x * speed if is_moving else 0
 	velocity.z = movement_dir.z * speed if is_moving else 0
 	if !is_on_floor():
@@ -72,6 +88,38 @@ func apply_gravity(delta: float):
 	velocity += Vector3.DOWN * gravity * delta
 
 func _process(delta):
+	input_check()
+	animation_update()
+	visual_update(delta)
+	mana_update(delta)
+	pass
+
+func mana_update(delta):
+	if mana < max_mana:
+		mana += mana_regen * delta
+		if mana > max_mana:
+			mana = max_mana
+	emit_signal(\"on_mana_change\", mana)
+	pass
+
+func visual_update(delta):
+	$Visual/EnemyCast.cast_to = $MovementCast.cast_to
+	if is_moving:
+		rotation.y = lerp_angle(rotation.y, rotation_dir.angle(), delta * rotation_speed)
+	if !enemy_list.empty():
+		get_closest_enemy()
+		if current_enemy:
+			visual_dir = (current_enemy.global_transform.origin - transform.origin).normalized()
+			$Visual.rotation.y = lerp_angle($Visual.rotation.y, -rotation.y + Vector2(visual_dir.z,visual_dir.x).angle(), delta * enemy_rotation_speed)
+	else:
+		$Visual.rotation.y = lerp_angle($Visual.rotation.y, visual_dir.y, delta * rotation_speed)
+	$Visual/WalkingDust.emitting = is_moving
+	if is_on_floor():
+		if is_jumping:
+			is_jumping = false
+	pass
+
+func animation_update():
 	if is_moving:
 		new_anim = \"Walk\"
 	else:
@@ -81,18 +129,23 @@ func _process(delta):
 		$Visual/Anim.play(anim)
 	pass
 
-func closest_enemy():
+func get_closest_enemy():
 	var close_enemy = null
 	if enemy_list.size() == 1:
-		return enemy_list[0]
+		close_enemy = enemy_list[0]
 	elif enemy_list.size() > 1:
 		var min_distance = distance_to(enemy_list[0])
+		close_enemy = enemy_list[0]
 		for enemy in enemy_list:
 			var distance = distance_to(enemy)
 			if  distance < min_distance:
 				min_distance = distance
 				close_enemy = enemy
-	return close_enemy
+	if current_enemy != close_enemy:
+		current_enemy.set_select(false)
+		current_enemy = close_enemy
+		current_enemy.set_select(true)
+	pass
 
 func distance_to(target : Spatial):
 	return global_transform.origin.distance_to(target.global_transform.origin)
@@ -113,24 +166,34 @@ func short_angle_dist(from, to):
 
 func _on_EnemyDetection_body_entered(body):
 	if body.is_in_group(\"Enemy\"):
+		Debug.debug(\"Enemy detected\")
 		if !enemy_list.has(body):
+			Debug.debug(\"Add Enemy\")
 			enemy_list.append(body)
+			current_enemy = body
 	pass # Replace with function body.
 
 func _on_EnemyDetection_body_exited(body):
 	if body.is_in_group(\"Enemy\"):
+		Debug.debug(\"Enemy detected\")
 		if enemy_list.has(body):
+			body.set_select(false)
+			Debug.debug(\"Remove Enemy\")
 			enemy_list.erase(body)
 	pass # Replace with function body.
 
 func _on_Jump_gui_input(event):
-	if event is InputEventScreenTouch:
-		if event.pressed and is_on_floor():
-			velocity.y = jump_speed
-			is_jumping = true
-		if !event.pressed:
-			velocity.y = velocity.y * jump_cut_height
+	jump()
 	pass # Replace with function body.
+
+func jump():
+	if is_jumping or !is_on_floor():
+		return
+	velocity.y = jump_speed
+	is_jumping = true
+	#if !event.pressed:
+	#	velocity.y = velocity.y * jump_cut_height
+	pass
 
 func learn_spell(spell_name):
 	emit_signal(\"learn_spell\", spell_name)
@@ -147,13 +210,49 @@ func on_spell_info(spell_range, effect_area):
 	$Visual/CastView.scale = Vector3.ONE * effect_area
 	pass # Replace with function body.
 
-func on_spell_casted():
+func on_spell_casted(spell):
 	$Visual/CastView.hide()
+	mana -= spell.mana_cost
+	emit_signal(\"on_mana_change\", mana)
 	pass # Replace with function body.
+
+func input_check():
+	if is_android:
+		return
+	keyboard_movement = Vector2.ZERO
+	_on_Joystick_analog_force(Vector2.ZERO)
+	if Input.is_action_pressed(\"ui_left\"):
+		keyboard_movement.x = -1
+	if Input.is_action_pressed(\"ui_right\"):
+		keyboard_movement.x = 1
+	if Input.is_action_pressed(\"ui_up\"):
+		keyboard_movement.y = 1
+	if Input.is_action_pressed(\"ui_down\"):
+		keyboard_movement.y = -1
+	if Input.is_action_just_pressed(\"ui_select\"):
+		jump()
+	_on_Joystick_analog_force(keyboard_movement)
+	pass
 "
 
-[sub_resource type="Animation" id=2]
-resource_name = "Idle"
+[sub_resource type="SpatialMaterial" id=2]
+flags_transparent = true
+flags_unshaded = true
+albedo_color = Color( 0.556863, 0.0196078, 1, 0.509804 )
+albedo_texture = ExtResource( 10 )
+uv1_scale = Vector3( 2, 2, 2 )
+
+[sub_resource type="CylinderMesh" id=3]
+material = SubResource( 2 )
+top_radius = 0.5
+bottom_radius = 0.5
+height = 0.001
+rings = 3
+
+[sub_resource type="Curve" id=4]
+_data = [ Vector2( 0, 0.748864 ), 0.0, 0.495606, 0, 1, Vector2( 0.506726, 1 ), 0.0, 0.0, 0, 0, Vector2( 1, 0.703409 ), -0.601271, 0.0, 1, 0 ]
+
+[sub_resource type="Animation" id=5]
 length = 0.1
 loop = true
 tracks/0/type = "value"
@@ -169,8 +268,7 @@ tracks/0/keys = {
 "values": [ Vector3( 0, 90, 0 ) ]
 }
 
-[sub_resource type="Animation" id=3]
-resource_name = "Walk"
+[sub_resource type="Animation" id=6]
 length = 0.6
 loop = true
 tracks/0/type = "value"
@@ -186,24 +284,26 @@ tracks/0/keys = {
 "values": [ Vector3( 10, 90, 0 ), Vector3( -10, 90, 0 ) ]
 }
 
-[sub_resource type="SpatialMaterial" id=4]
+[sub_resource type="SpatialMaterial" id=7]
 flags_transparent = true
 flags_unshaded = true
-albedo_color = Color( 0.556863, 0.0196078, 1, 0.509804 )
-albedo_texture = ExtResource( 10 )
-uv1_scale = Vector3( 2, 2, 2 )
+flags_do_not_receive_shadows = true
+flags_disable_ambient_light = true
+vertex_color_use_as_albedo = true
+albedo_color = Color( 1, 1, 1, 0.882353 )
 
-[sub_resource type="CylinderMesh" id=5]
-material = SubResource( 4 )
-top_radius = 0.5
-bottom_radius = 0.5
-height = 0.001
-rings = 3
+[sub_resource type="CubeMesh" id=8]
+material = SubResource( 7 )
+size = Vector3( 0.1, 0.1, 0.1 )
 
-[sub_resource type="Curve" id=6]
-_data = [ Vector2( 0, 0.748864 ), 0.0, 0.495606, 0, 1, Vector2( 0.506726, 1 ), 0.0, 0.0, 0, 0, Vector2( 1, 0.703409 ), -0.601271, 0.0, 1, 0 ]
+[sub_resource type="Curve" id=9]
+_data = [ Vector2( 0, 0.994318 ), 0.0, 0.0, 0, 0, Vector2( 1, 0.0306818 ), -0.342015, 0.0, 0, 0 ]
 
-[sub_resource type="GDScript" id=7]
+[sub_resource type="Gradient" id=10]
+offsets = PoolRealArray( 0, 0.463576, 1 )
+colors = PoolColorArray( 1, 1, 1, 1, 1, 1, 1, 0.827815, 1, 1, 1, 0 )
+
+[sub_resource type="GDScript" id=11]
 script/source = "extends Control
 
 onready var spell_cast_text = get_node(\"SpellCast/SpellCast\")
@@ -227,15 +327,20 @@ func get_spell_name(spell_list : Array):
 		spell_name += spell + \" \"
 	spell_name[spell_name.length() - 1] = \"*\"
 	return spell_name
+
+func remove_android_hud():
+	$Jump.hide()
+	$Joystick.hide()
+	pass
 "
 
-[sub_resource type="StyleBoxFlat" id=8]
+[sub_resource type="StyleBoxFlat" id=12]
 bg_color = Color( 0.839216, 0.839216, 0.839216, 1 )
 
-[sub_resource type="StyleBoxFlat" id=9]
+[sub_resource type="StyleBoxFlat" id=13]
 bg_color = Color( 0.211765, 0.211765, 0.211765, 1 )
 
-[sub_resource type="GDScript" id=10]
+[sub_resource type="GDScript" id=14]
 script/source = "extends ProgressBar
 
 export var cooldown_time : float = 1
@@ -256,7 +361,7 @@ func on_cast_ready():
 	pass # Replace with function body.
 "
 
-[sub_resource type="Animation" id=11]
+[sub_resource type="Animation" id=15]
 length = 4.0
 tracks/0/type = "value"
 tracks/0/path = NodePath(".:percent_visible")
@@ -283,12 +388,12 @@ tracks/1/keys = {
 "values": [ Color( 1, 1, 1, 0 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 0 ) ]
 }
 
-[sub_resource type="DynamicFont" id=12]
+[sub_resource type="DynamicFont" id=16]
 size = 26
 use_filter = true
 font_data = ExtResource( 8 )
 
-[sub_resource type="Animation" id=13]
+[sub_resource type="Animation" id=17]
 length = 1.5
 tracks/0/type = "value"
 tracks/0/path = NodePath(".:rect_position")
@@ -315,17 +420,19 @@ tracks/1/keys = {
 "values": [ Color( 1, 1, 1, 0 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 0 ) ]
 }
 
-[sub_resource type="SphereShape" id=14]
+[sub_resource type="SphereShape" id=18]
 radius = 0.41
 
-[sub_resource type="SphereShape" id=15]
+[sub_resource type="SphereShape" id=19]
 radius = 12.0
 
 [node name="Wizard" type="KinematicBody" groups=[
 "Player",
 ]]
+collision_mask = 14
 script = SubResource( 1 )
 speed = 5.0
+rotation_speed = 10.0
 jump_speed = 10.0
 
 [node name="MovementCast" type="RayCast" parent="."]
@@ -343,6 +450,24 @@ transform = Transform( -4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0, 0
 mesh = ExtResource( 5 )
 material/0 = null
 
+[node name="CastView" type="Position3D" parent="Visual"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5 )
+
+[node name="RayCast" type="RayCast" parent="Visual/CastView"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.88359, 0 )
+enabled = true
+cast_to = Vector3( 0, -50, 0 )
+
+[node name="CastView" type="CPUParticles" parent="Visual/CastView"]
+amount = 3
+lifetime = 2.5
+mesh = SubResource( 3 )
+flag_rotate_y = true
+gravity = Vector3( 0, 0, 0 )
+angle = 5.0
+scale_amount = 1.5
+scale_amount_curve = SubResource( 4 )
+
 [node name="EnemyCast" type="RayCast" parent="Visual"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0 )
 enabled = true
@@ -356,26 +481,33 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.571308, 1.02158 )
 
 [node name="Anim" type="AnimationPlayer" parent="Visual"]
 autoplay = "Idle"
-anims/Idle = SubResource( 2 )
-anims/Walk = SubResource( 3 )
+anims/Idle = SubResource( 5 )
+anims/Walk = SubResource( 6 )
 
-[node name="CastView" type="Position3D" parent="Visual"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5 )
+[node name="ArrowPointer" parent="Visual" instance=ExtResource( 14 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.55734 )
 
-[node name="RayCast" type="RayCast" parent="Visual/CastView"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.88359, 0 )
-enabled = true
-cast_to = Vector3( 0, -50, 0 )
-
-[node name="CastView" type="CPUParticles" parent="Visual/CastView"]
-amount = 3
-lifetime = 2.5
-mesh = SubResource( 5 )
-flag_rotate_y = true
-gravity = Vector3( 0, 0, 0 )
-angle = 5.0
+[node name="WalkingDust" type="CPUParticles" parent="Visual"]
+transform = Transform( -4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0.12734, -0.720781 )
+cast_shadow = 0
+amount = 12
+lifetime = 2.0
+randomness = 1.0
+lifetime_randomness = 0.5
+local_coords = false
+mesh = SubResource( 8 )
+emission_shape = 3
+emission_points = PoolVector3Array( -0.442967, -0.0507014, 0.14251, -0.286709, 0.0363602, 0.130668, -0.400888, -0.00635691, -0.113312, -0.246584, 0.0153767, 0.149695, -0.318793, 0.035655, 0.0149778, -0.329327, 0.0297147, -0.0862136, -0.42228, 0.0397747, -0.0571296, -0.41801, -0.048882, 0.193152, -0.368727, 0.047398, 0.100737, -0.430744, 0.0190734, 0.140851, -0.424441, 0.0163286, -0.0471706, -0.326575, -0.0256334, -0.158496, -0.431621, -0.0374855, 0.113508, -0.293301, 0.0246388, -0.039595, -0.250512, 0.00346267, 0.158368, -0.295813, 0.0289752, -0.156752 )
+flag_align_y = true
+spread = 0.0
+flatness = 1.0
+gravity = Vector3( 0, 0.7, 0 )
+initial_velocity_random = 1.0
 scale_amount = 1.5
-scale_amount_curve = SubResource( 6 )
+scale_amount_random = 1.0
+scale_amount_curve = SubResource( 9 )
+color_ramp = SubResource( 10 )
+hue_variation = 0.99
 
 [node name="GUI" type="CanvasLayer" parent="."]
 follow_viewport_enable = true
@@ -384,7 +516,7 @@ follow_viewport_enable = true
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
-script = SubResource( 7 )
+script = SubResource( 11 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -416,12 +548,12 @@ margin_top = -50.0
 margin_right = 60.0
 margin_bottom = -42.0
 mouse_filter = 2
-custom_styles/fg = SubResource( 8 )
-custom_styles/bg = SubResource( 9 )
+custom_styles/fg = SubResource( 12 )
+custom_styles/bg = SubResource( 13 )
 max_value = 2.0
 value = 1.0
 percent_visible = false
-script = SubResource( 10 )
+script = SubResource( 14 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -443,7 +575,7 @@ __meta__ = {
 }
 
 [node name="Anim" type="AnimationPlayer" parent="GUI/GUI/SpellLearned"]
-anims/Learned = SubResource( 11 )
+anims/Learned = SubResource( 15 )
 
 [node name="Joystick" parent="GUI/GUI" instance=ExtResource( 2 )]
 margin_left = 121.043
@@ -468,7 +600,7 @@ __meta__ = {
 self_modulate = Color( 1, 1, 1, 0 )
 anchor_right = 1.0
 anchor_bottom = 1.0
-custom_fonts/font = SubResource( 12 )
+custom_fonts/font = SubResource( 16 )
 text = "Mur"
 align = 1
 __meta__ = {
@@ -476,16 +608,22 @@ __meta__ = {
 }
 
 [node name="Anim" type="AnimationPlayer" parent="GUI/GUI/SpellCast/SpellCast"]
-anims/Casted = SubResource( 13 )
+anims/Casted = SubResource( 17 )
+
+[node name="ManaBar" parent="GUI/GUI" instance=ExtResource( 13 )]
+margin_left = 15.0
+margin_top = 12.0
+margin_right = -962.0
+margin_bottom = -667.0
 
 [node name="CapsuleCollider" type="CollisionShape" parent="."]
 transform = Transform( 1, 0, 0, 0, -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, 0.4, 0 )
-shape = SubResource( 14 )
+shape = SubResource( 18 )
 
 [node name="EnemyDetection" type="Area" parent="."]
 
 [node name="CollisionShape" type="CollisionShape" parent="EnemyDetection"]
-shape = SubResource( 15 )
+shape = SubResource( 19 )
 
 [node name="Spells" parent="." instance=ExtResource( 6 )]
 spells_dic = {
@@ -494,8 +632,8 @@ spells_dic = {
 "FaZur": ExtResource( 12 ),
 "Ign": ExtResource( 3 )
 }
-[connection signal="learn_spell" from="." to="GUI/GUI/PowerTree" method="_on_Wizard_learn_spell"]
 [connection signal="learn_spell" from="." to="GUI/GUI" method="_on_Wizard_learn_spell"]
+[connection signal="learn_spell" from="." to="GUI/GUI/PowerTree" method="_on_Wizard_learn_spell"]
 [connection signal="cast_spell" from="GUI/GUI/PowerTree" to="GUI/GUI" method="_on_PowerTree_cast_spell"]
 [connection signal="gui_input" from="GUI/GUI/Jump" to="." method="_on_Jump_gui_input"]
 [connection signal="analog_force" from="GUI/GUI/Joystick" to="." method="_on_Joystick_analog_force"]

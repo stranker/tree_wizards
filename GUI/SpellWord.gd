@@ -1,11 +1,11 @@
-extends Button
+extends Control
 
 export var spell_name : String = ""
 export (Array, NodePath) var next_words
 export var learned : bool = false
 export var spell_texture : Texture = null
 
-enum SpellState {CanClick, Clicked, Reseting, Last}
+enum SpellState {CanClick, Clicked, Reseting, OutMana, Last}
 
 export (SpellState) var current_state = SpellState.CanClick
 
@@ -15,7 +15,8 @@ var word_parent = null
 var reseting : bool = false
 
 func _ready():
-	$Icon.texture = spell_texture
+	if spell_texture:
+		$Icon.texture = spell_texture
 	pass
 
 func on_click():
@@ -53,15 +54,24 @@ func set_active(value, parent):
 	var spell_texture_name = "res://Assets/Sprites/Spells/" + current_spell_name.to_lower() + "_icon.png"
 	spell_texture = load(spell_texture_name)
 	$Icon.texture = spell_texture
+	var spell = SpellManager.get_spell(current_spell_name)
+	if spell:
+		if GameManager.wizard.mana < spell.mana_cost:
+			current_state = SpellState.OutMana
+			$Anim.play("OutMana")
 	pass
 
 func reset():
 	if current_state == SpellState.Reseting:
 		return
-	current_state = SpellState.Reseting
-	if $Anim.is_playing():
-		$Anim.stop()
-	$Anim.play("Reset",-1,1.5)
+	if spell_name != "":
+		current_state = SpellState.Reseting
+		if $Anim.is_playing():
+			$Anim.stop()
+		$Anim.play("Reset",-1,1.5)
+	else:
+		current_state = SpellState.CanClick
+		$Anim.play("CanClick")
 	pass
 
 func learn():

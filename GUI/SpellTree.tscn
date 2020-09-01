@@ -62,18 +62,15 @@ func extract_pointer(event):
 		return -1
 
 func on_touch_screen(event : InputEventScreenTouch):
-	if !$ControlArea.is_inside(event.position):
-		screen_touched = false
-		return
 	screen_touched = event.pressed
 	if screen_touched:
 		if !casting:
-			casting = true
-			$Anchor.rect_global_position = event.position
-			$Anchor/Initial.on_click()
-			$SpellParticles.global_position = event.position
-			$SpellParticles.emitting = true
-			$SpellParticles/EffectParticles.emitting = true
+			if $Anchor/Initial.get_global_rect().has_point(event.position):
+				casting = true
+				$Anchor/Initial.on_click()
+				$SpellParticles.global_position = event.position
+				$SpellParticles.emitting = true
+				$SpellParticles/EffectParticles.emitting = true
 	else:
 		screen_drag = false
 		current_pointer = -1
@@ -83,8 +80,6 @@ func on_touch_screen(event : InputEventScreenTouch):
 	pass
 
 func on_drag_screen(event : InputEventScreenDrag):
-	if !$ControlArea.is_inside(event.position):
-		cast_spell()
 	if screen_touched:
 		screen_drag = true
 		$SpellParticles.global_position = event.position
@@ -168,30 +163,29 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-margin_left = 478.742
-margin_top = 73.437
-margin_right = 518.742
-margin_bottom = 113.437
+margin_left = 544.668
+margin_top = 70.4404
+margin_right = 584.668
+margin_bottom = 110.44
 mouse_filter = 2
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="Initial" parent="Anchor" instance=ExtResource( 1 )]
-visible = false
-margin_left = -78.5
-margin_top = -52.3852
-margin_right = 54.5
-margin_bottom = 80.6148
+margin_left = -132.439
+margin_top = -43.3953
+margin_right = 0.561035
+margin_bottom = 89.6047
 next_words = [ NodePath("../Ign"), NodePath("../Fa") ]
 learned = true
 
 [node name="Ign" parent="Anchor" instance=ExtResource( 1 )]
 visible = false
-margin_left = -265.729
-margin_top = -180.385
-margin_right = -137.729
-margin_bottom = -52.3852
+margin_left = -255.241
+margin_top = -114.459
+margin_right = -127.241
+margin_bottom = 13.5403
 spell_name = "Ign"
 next_words = [ NodePath("../Zur"), NodePath("../Dor") ]
 learned = true
@@ -199,10 +193,10 @@ spell_texture = ExtResource( 2 )
 
 [node name="Fa" parent="Anchor" instance=ExtResource( 1 )]
 visible = false
-margin_left = -40.0
-margin_top = -239.819
-margin_right = 88.0
-margin_bottom = -111.819
+margin_left = -114.915
+margin_top = -157.412
+margin_right = 13.0847
+margin_bottom = -29.4121
 spell_name = "Fa"
 next_words = [ NodePath("../Zur"), NodePath("../Dor") ]
 learned = true
@@ -210,28 +204,29 @@ spell_texture = ExtResource( 4 )
 
 [node name="Zur" parent="Anchor" instance=ExtResource( 1 )]
 visible = false
-margin_left = -304.229
-margin_top = -386.632
-margin_right = -176.229
-margin_bottom = -258.632
+margin_left = -284.751
+margin_top = -254.781
+margin_right = -156.751
+margin_bottom = -126.781
 spell_name = "Zur"
 learned = true
 spell_texture = ExtResource( 6 )
 
 [node name="Dor" parent="Anchor" instance=ExtResource( 1 )]
 visible = false
-margin_left = -55.0049
-margin_top = -425.132
-margin_right = 72.9951
-margin_bottom = -297.132
+margin_left = -144.903
+margin_top = -276.8
+margin_right = -16.9033
+margin_bottom = -148.8
 spell_name = "Dor"
 learned = true
 spell_texture = ExtResource( 6 )
 
 [node name="SpellParticles" type="CPUParticles2D" parent="."]
+visible = false
 position = Vector2( 1338.59, 613.437 )
 emitting = false
-amount = 25
+amount = 40
 lifetime = 0.5
 explosiveness = 0.1
 local_coords = false
@@ -251,7 +246,7 @@ color_ramp = SubResource( 3 )
 
 [node name="EffectParticles" type="CPUParticles2D" parent="SpellParticles"]
 emitting = false
-amount = 25
+amount = 40
 lifetime = 0.5
 explosiveness = 0.1
 local_coords = false

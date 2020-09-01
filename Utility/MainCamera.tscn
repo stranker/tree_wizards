@@ -25,6 +25,7 @@ func _process(delta):
 		transform.origin = lerp_mov
 	else:
 		transform.origin = target_pos + custom_pos
+	#$ArrowPointer.transform.origin = 
 	
 	if shake_time > 0:
 		shake_time -= delta
