@@ -35,6 +35,11 @@ func _on_FakeShadows_button_down():
 	for shadow in fake_shadows:
 		shadow.visible = !shadow.visible
 	pass # Replace with function body.
+
+
+func _on_ResetMana_button_down():
+	$Wizard.reset_mana()
+	pass # Replace with function body.
 "
 
 [sub_resource type="GDScript" id=2]
@@ -86,6 +91,11 @@ target_path = NodePath("../Wizard")
 [node name="ResetPos" type="Position3D" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.80975, 0 )
 
+[node name="Wizard" parent="." instance=ExtResource( 1 )]
+transform = Transform( 0.124606, 0, -0.992206, 0, 1, 0, 0.992206, 0, 0.124606, 1.58201, 3.51457, 29.8123 )
+jump_speed = 32.0
+gravity = 180.0
+
 [node name="GUI" type="CanvasLayer" parent="."]
 
 [node name="ResetScene" type="Button" parent="GUI"]
@@ -108,13 +118,12 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="FakeShadows" type="Button" parent="GUI"]
-visible = false
-margin_left = 316.802
-margin_top = -0.0823414
-margin_right = 458.802
-margin_bottom = 54.9176
-text = "Fake Shadows"
+[node name="ResetMana" type="Button" parent="GUI"]
+margin_left = 735.339
+margin_top = 606.689
+margin_right = 855.339
+margin_bottom = 713.689
+text = "RESET MANA"
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -226,13 +235,8 @@ transform = Transform( -0.866025, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866025, 17.2313, 
 
 [node name="Dummy2" parent="." instance=ExtResource( 7 )]
 transform = Transform( -0.5, 0, -0.866025, 0, 1, 0, 0.866025, 0, -0.5, 13.2641, 0.935169, 14.2981 )
-
-[node name="Wizard" parent="." instance=ExtResource( 1 )]
-transform = Transform( 0.124606, 0, -0.992206, 0, 1, 0, 0.992206, 0, 0.124606, 1.58201, 3.51457, 29.8123 )
-jump_speed = 32.0
-gravity = 180.0
 [connection signal="button_down" from="GUI/ResetScene" to="." method="_on_ResetScene_button_down"]
 [connection signal="button_down" from="GUI/ResetPos" to="." method="_on_ResetPos_button_down"]
-[connection signal="button_down" from="GUI/FakeShadows" to="." method="_on_FakeShadows_button_down"]
+[connection signal="button_down" from="GUI/ResetMana" to="." method="_on_ResetMana_button_down"]
 [connection signal="button_down" from="GUI/Debug/DebugPanel/ClearButton" to="GUI/Debug" method="_on_ClearButton_button_down"]
 [connection signal="button_down" from="GUI/Debug/ConsoleButton" to="GUI/Debug" method="_on_ConsoleButton_button_down"]

@@ -10,11 +10,12 @@ onready var camera : Camera = get_viewport().get_camera()
 export var offset : Vector2 = Vector2.ZERO
 
 func _ready():
+	randomize()
 	tween()
 
 func tween():
 	var end_pos = Vector2(rand_range(-40, 40), 0)
-	$Tween.interpolate_property($Anchor/Control, 'rect_position', $Anchor/Control.rect_position, end_pos, 0.5, Tween.TRANS_EXPO, Tween.EASE_OUT)
+	$Tween.interpolate_property($Anchor/Control, 'rect_position', $Anchor/Control.rect_position, end_pos, 0.3, Tween.TRANS_EXPO, Tween.EASE_OUT)
 	$Tween.start()
 	pass
 

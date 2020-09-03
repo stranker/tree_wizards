@@ -1,4 +1,4 @@
-[gd_scene load_steps=34 format=2]
+[gd_scene load_steps=35 format=2]
 
 [ext_resource path="res://GUI/SpellTree.tscn" type="PackedScene" id=1]
 [ext_resource path="res://GUI/Joystick.tscn" type="PackedScene" id=2]
@@ -14,6 +14,7 @@
 [ext_resource path="res://Objects/Spells/FaZur.tscn" type="PackedScene" id=12]
 [ext_resource path="res://UI/ManaBar.tscn" type="PackedScene" id=13]
 [ext_resource path="res://Objects/Misc/ArrowPointer.tscn" type="PackedScene" id=14]
+[ext_resource path="res://Objects/Spells/IgnZur.tscn" type="PackedScene" id=15]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends KinematicBody
@@ -141,10 +142,17 @@ func get_closest_enemy():
 			if  distance < min_distance:
 				min_distance = distance
 				close_enemy = enemy
-	if current_enemy != close_enemy:
-		current_enemy.set_select(false)
-		current_enemy = close_enemy
-		current_enemy.set_select(true)
+	if close_enemy:
+		if current_enemy:
+			if current_enemy != close_enemy:
+				current_enemy.set_select(false)
+				current_enemy = close_enemy
+				current_enemy.set_select(true)
+		else:
+			current_enemy = close_enemy
+			current_enemy.set_select(true)
+	else:
+		current_enemy = null
 	pass
 
 func distance_to(target : Spatial):
@@ -170,6 +178,8 @@ func _on_EnemyDetection_body_entered(body):
 		if !enemy_list.has(body):
 			Debug.debug(\"Add Enemy\")
 			enemy_list.append(body)
+			if !current_enemy:
+				body.set_select(true)
 			current_enemy = body
 	pass # Replace with function body.
 
@@ -180,6 +190,8 @@ func _on_EnemyDetection_body_exited(body):
 			body.set_select(false)
 			Debug.debug(\"Remove Enemy\")
 			enemy_list.erase(body)
+		if enemy_list.empty():
+			current_enemy = null
 	pass # Replace with function body.
 
 func _on_Jump_gui_input(event):
@@ -191,8 +203,6 @@ func jump():
 		return
 	velocity.y = jump_speed
 	is_jumping = true
-	#if !event.pressed:
-	#	velocity.y = velocity.y * jump_cut_height
 	pass
 
 func learn_spell(spell_name):
@@ -233,6 +243,10 @@ func input_check():
 		jump()
 	_on_Joystick_analog_force(keyboard_movement)
 	pass
+
+func reset_mana():
+	mana = max_mana
+	emit_signal(\"on_mana_change\", mana)
 "
 
 [sub_resource type="SpatialMaterial" id=2]
@@ -250,7 +264,7 @@ height = 0.001
 rings = 3
 
 [sub_resource type="Curve" id=4]
-_data = [ Vector2( 0, 0.748864 ), 0.0, 0.495606, 0, 1, Vector2( 0.506726, 1 ), 0.0, 0.0, 0, 0, Vector2( 1, 0.703409 ), -0.601271, 0.0, 1, 0 ]
+_data = [ Vector2( 0, 0.130682 ), 0.0, 4.47976, 0, 1, Vector2( 0.183908, 0.954545 ), 0.684029, 0.684029, 0, 0, Vector2( 0.977011, 0.801136 ), -0.193429, 0.0, 1, 0 ]
 
 [sub_resource type="Animation" id=5]
 length = 0.1
@@ -462,9 +476,7 @@ cast_to = Vector3( 0, -50, 0 )
 amount = 3
 lifetime = 2.5
 mesh = SubResource( 3 )
-flag_rotate_y = true
 gravity = Vector3( 0, 0, 0 )
-angle = 5.0
 scale_amount = 1.5
 scale_amount_curve = SubResource( 4 )
 
@@ -539,6 +551,7 @@ __meta__ = {
 }
 
 [node name="SpellColdown" type="ProgressBar" parent="GUI/GUI"]
+visible = false
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -630,7 +643,8 @@ spells_dic = {
 "Fa": ExtResource( 7 ),
 "FaDor": ExtResource( 11 ),
 "FaZur": ExtResource( 12 ),
-"Ign": ExtResource( 3 )
+"Ign": ExtResource( 3 ),
+"IgnZur": ExtResource( 15 )
 }
 [connection signal="learn_spell" from="." to="GUI/GUI" method="_on_Wizard_learn_spell"]
 [connection signal="learn_spell" from="." to="GUI/GUI/PowerTree" method="_on_Wizard_learn_spell"]

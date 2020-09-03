@@ -20,12 +20,7 @@ func _process(delta):
 
 func _on_Anim_animation_finished(anim_name):
 	chase = true
-	pass # Replace with function body.
-
-
-func _on_IceMissile_on_target(target):
-	pass # Replace with function body.
-"
+	pass # Replace with function body."
 
 [sub_resource type="Animation" id=2]
 resource_name = "IceMissile"
@@ -122,5 +117,4 @@ transform = Transform( 0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 1, 0 )
 [node name="Anim" type="AnimationPlayer" parent="."]
 autoplay = "IceMissile"
 anims/IceMissile = SubResource( 2 )
-[connection signal="on_target" from="." to="." method="_on_IceMissile_on_target"]
 [connection signal="animation_finished" from="Anim" to="." method="_on_Anim_animation_finished"]

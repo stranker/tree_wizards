@@ -160,6 +160,8 @@ autoplay = "Spike"
 anims/Spike = SubResource( 2 )
 
 [node name="Area" type="Area" parent="."]
+collision_layer = 16
+collision_mask = 2
 
 [node name="CollisionShape" type="CollisionShape" parent="Area"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0375029, 1.27865, 0 )
