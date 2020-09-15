@@ -1,12 +1,11 @@
 [gd_scene load_steps=12 format=2]
 
 [ext_resource path="res://Objects/Player/Wizard.tscn" type="PackedScene" id=1]
-[ext_resource path="res://Objects/Enemies/Enemy.tscn" type="PackedScene" id=2]
 [ext_resource path="res://Sky.jpg" type="Texture" id=3]
 [ext_resource path="res://Utility/MainCamera.tscn" type="PackedScene" id=4]
 [ext_resource path="res://Objects/Interactuable/SpellPapyrus.tscn" type="PackedScene" id=5]
 [ext_resource path="res://Assets/TileSet/Forest.tscn" type="PackedScene" id=6]
-[ext_resource path="res://Objects/Enemies/Dummy.tscn" type="PackedScene" id=7]
+[ext_resource path="res://Assets/Fonts/Iron Latch.TTF" type="DynamicFontData" id=8]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends Spatial
@@ -45,9 +44,11 @@ func _on_ResetMana_button_down():
 [sub_resource type="GDScript" id=2]
 script/source = "extends Control
 
+onready var player_state_label = $PlayerState
+onready var visual_state_label = $VisualState
+
 func _ready():
 	Debug.set_panel(self)
-
 
 func set_debug(info : String):
 	$DebugPanel/DebugInfo.add_text(info + \"\\n\")
@@ -59,14 +60,36 @@ func _on_ClearButton_button_down():
 func _on_ConsoleButton_button_down():
 	$DebugPanel.visible = !$DebugPanel.visible
 	pass # Replace with function body.
+
+#enum PlayerState {IDLE, RUN, JUMP, FALL, DASH, LAST}
+func set_player_state(player_state : int):
+	match player_state:
+		0: player_state_label.text = \"IDLE\"
+		1: player_state_label.text = \"RUN\"
+		2: player_state_label.text = \"JUMP\"
+		3: player_state_label.text = \"FALL\"
+		4: player_state_label.text = \"DASH\"
+		5: player_state_label.text = \"LAST\"
+	pass
+
+func set_visual_state(visual_state : int):
+	match visual_state:
+		0: visual_state_label.text = \"NORMAL\"
+		1: visual_state_label.text = \"LOCK_TO_TARGET\"
+		2: visual_state_label.text = \"LAST\"
+	pass
 "
 
-[sub_resource type="PanoramaSky" id=3]
+[sub_resource type="DynamicFont" id=3]
+size = 36
+font_data = ExtResource( 8 )
+
+[sub_resource type="PanoramaSky" id=4]
 panorama = ExtResource( 3 )
 
-[sub_resource type="Environment" id=4]
+[sub_resource type="Environment" id=5]
 background_mode = 1
-background_sky = SubResource( 3 )
+background_sky = SubResource( 4 )
 background_color = Color( 0.278431, 0.698039, 0.823529, 1 )
 ambient_light_color = Color( 0.670588, 0.576471, 0.368627, 1 )
 fog_color = Color( 0.898039, 0.94902, 1, 1 )
@@ -97,6 +120,7 @@ jump_speed = 32.0
 gravity = 180.0
 
 [node name="GUI" type="CanvasLayer" parent="."]
+layer = 2
 
 [node name="ResetScene" type="Button" parent="GUI"]
 visible = false
@@ -129,10 +153,8 @@ __meta__ = {
 }
 
 [node name="Debug" type="Control" parent="GUI"]
-anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -804.0
-margin_bottom = 294.0
+anchor_bottom = 1.0
 mouse_filter = 2
 script = SubResource( 2 )
 __meta__ = {
@@ -142,8 +164,10 @@ __meta__ = {
 [node name="DebugPanel" type="Panel" parent="GUI/Debug"]
 visible = false
 self_modulate = Color( 1, 1, 1, 0.364706 )
+anchor_left = 1.0
 anchor_right = 1.0
-anchor_bottom = 1.0
+margin_left = -536.0
+margin_bottom = 187.0
 mouse_filter = 2
 __meta__ = {
 "_edit_use_anchors_": false
@@ -180,17 +204,30 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Enemy" parent="." instance=ExtResource( 2 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -23.7331, 2.76053, 24.5236 )
-speed = 10.0
-max_force = 4.0
-mass = 1.7
+[node name="PlayerState" type="Label" parent="GUI/Debug"]
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -213.0
+margin_right = 213.0
+margin_bottom = 32.0
+rect_min_size = Vector2( 115, 32 )
+custom_fonts/font = SubResource( 3 )
+text = "IDLE"
+align = 1
 
-[node name="Enemy2" parent="." instance=ExtResource( 2 )]
-transform = Transform( 0.966345, 0, -0.257251, 0, 1, 0, 0.257251, 0, 0.966345, -23.9623, 2.26317, -1.02436 )
-speed = 10.0
-max_force = 4.0
-mass = 1.7
+[node name="VisualState" type="Label" parent="GUI/Debug"]
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -307.835
+margin_top = 32.0
+margin_right = 305.165
+margin_bottom = 64.0
+custom_fonts/font = SubResource( 3 )
+text = "IDLE"
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="SpellPapyrus" parent="." instance=ExtResource( 5 )]
 transform = Transform( 0.274194, 0, -0.961674, 0, 1, 0, 0.961674, 0, 0.274194, -10.9595, 1.6705, 11.2826 )
@@ -198,7 +235,7 @@ speed_rotation = 2.0
 spell_learn = "Fa"
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource( 4 )
+environment = SubResource( 5 )
 
 [node name="Forest" parent="." groups=[
 "Map",
@@ -214,27 +251,6 @@ shadow_enabled = true
 shadow_color = Color( 0.372549, 0.372549, 0.372549, 1 )
 directional_shadow_mode = 0
 directional_shadow_depth_range = 1
-
-[node name="Dummy" parent="." instance=ExtResource( 7 )]
-transform = Transform( -0.707107, 0, -0.707107, 0, 1, 0, 0.707107, 0, -0.707107, 15.4496, 0.935169, 16.0057 )
-
-[node name="Dummy4" parent="." instance=ExtResource( 7 )]
-transform = Transform( -0.798058, 0, 0.602582, 0, 1, 0, -0.602582, 0, -0.798058, 13.4915, 0.935169, 26.6935 )
-killeable = true
-
-[node name="Dummy5" parent="." instance=ExtResource( 7 )]
-transform = Transform( -0.798058, 0, 0.602582, 0, 1, 0, -0.602582, 0, -0.798058, 11.88, 0.935169, 28.4767 )
-killeable = true
-
-[node name="Dummy6" parent="." instance=ExtResource( 7 )]
-transform = Transform( -0.798058, 0, 0.602582, 0, 1, 0, -0.602582, 0, -0.798058, 10.1614, 0.935169, 30.3711 )
-killeable = true
-
-[node name="Dummy3" parent="." instance=ExtResource( 7 )]
-transform = Transform( -0.866025, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866025, 17.2313, 0.935169, 18.4217 )
-
-[node name="Dummy2" parent="." instance=ExtResource( 7 )]
-transform = Transform( -0.5, 0, -0.866025, 0, 1, 0, 0.866025, 0, -0.5, 13.2641, 0.935169, 14.2981 )
 [connection signal="button_down" from="GUI/ResetScene" to="." method="_on_ResetScene_button_down"]
 [connection signal="button_down" from="GUI/ResetPos" to="." method="_on_ResetPos_button_down"]
 [connection signal="button_down" from="GUI/ResetMana" to="." method="_on_ResetMana_button_down"]

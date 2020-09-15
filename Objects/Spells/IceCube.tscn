@@ -12,9 +12,15 @@ var rotation_increment = 2
 var tween_duration = 0.1
 var rand_rotation = 5
 
+var active : bool = false
 
 func _ready():
 	randomize()
+	pass
+
+func set_time(time):
+	active = true
+	ice_duration = time
 	$Timer.wait_time = ice_duration - break_duration
 	$Timer.start()
 	pass
@@ -22,6 +28,16 @@ func _ready():
 func ice_break():
 	new_tween()
 	$Anim.play(\"Break\")
+	pass
+
+func stop():
+	$Anim.playback_speed = 2
+	ice_break()
+	active = false
+
+func restart():
+	$Timer.stop()
+	set_time(ice_duration)
 	pass
 
 func new_tween():
@@ -35,6 +51,8 @@ func new_tween():
 	$Tween.start()
 	pass
 
+func get_effect_type():
+	return \"ice\"
 
 func _on_Tween_tween_all_completed():
 	break_duration -= tween_duration
@@ -44,7 +62,6 @@ func _on_Tween_tween_all_completed():
 	new_tween()
 	pass
 
-
 func _on_Anim_animation_finished(anim_name):
 	$IceParticles.emitting = true
 	$Tween.stop_all()
@@ -52,8 +69,9 @@ func _on_Anim_animation_finished(anim_name):
 	queue_free()
 	pass # Replace with function body.
 
-
 func _on_Timer_timeout():
+	if !active:
+		return
 	ice_break()
 	pass # Replace with function body.
 "
@@ -113,7 +131,7 @@ colors = PoolColorArray( 1, 1, 1, 1, 1, 1, 1, 0 )
 script = SubResource( 1 )
 
 [node name="Visual" type="Spatial" parent="."]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.809296, 0 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0944468, 0 )
 
 [node name="Mesh" type="MeshInstance" parent="Visual"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.8594, 0 )

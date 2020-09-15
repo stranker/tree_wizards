@@ -1,0 +1,14 @@
+[remap]
+
+importer="Vox.Importer"
+type="Mesh"
+path="res://.import/Knight.voxelobject.vox-91e34c49bf8bad206e8d10d21065886c.mesh"
+
+[deps]
+
+source_file="res://Assets/examples/Importers/MagicaVoxel/Knight/Knight.voxelobject.vox"
+dest_files=[ "res://.import/Knight.voxelobject.vox-91e34c49bf8bad206e8d10d21065886c.mesh" ]
+
+[params]
+
+Scale=0.1

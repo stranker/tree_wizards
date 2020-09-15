@@ -7,13 +7,12 @@ var spells : Array = []
 var spell_names : Array = []
 
 var wizard : KinematicBody = null
-var wizard_spell_pos : Position3D = null
-var wizard_cast_view : Position3D = null
+var wizard_cast_helper : Spatial = null
 
-signal spell_casted
+signal spell_casted(spell)
 signal cast_cooldown(cd)
 signal cast_ready
-signal spell_info(spell_range, effect_area)
+signal spell_info(spell_data)
 
 var cooldown_timer : Timer
 
@@ -23,6 +22,10 @@ func _ready():
 	cooldown_timer.connect("timeout", self, "_on_cooldown_timer_timeout")
 	pass
 
+func init(wiz):
+	wizard = wiz
+	wizard_cast_helper = wizard.get_cast_helper()
+
 func _process(delta):
 	if !cooldown_timer.is_stopped():
 		emit_signal("cast_cooldown", cooldown_timer.wait_time)
@@ -30,14 +33,10 @@ func _process(delta):
 
 func check_spell_info(casted_words):
 	var spell_name : String = get_spell_name(casted_words)
-	var spell_info = null
 	for spell in spells:
-		if !spell_info and spell.spell_name == spell_name:
-			if spell.has_method("get_spell_info"):
-				spell_info = spell.get_spell_info()
-	if !spell_info:
-		return
-	emit_signal("spell_info", spell_info.spell_range, spell_info.effect_area)
+		if spell.spell_name == spell_name:
+			emit_signal("spell_info", spell.get_spell_info())
+			break
 	pass
 
 func get_spell_name(spell_list):
@@ -77,30 +76,9 @@ func get_spell(spell_name):
 
 func cast_spell(spell_to_cast : Spatial):
 	var spell = spell_to_cast.duplicate()
-	var spell_pos = wizard_spell_pos.global_transform.origin
+	var spell_pos = wizard_cast_helper.get_spell_pos()
+	var spell_direction = wizard.get_spell_direction()
 	get_tree().root.call_deferred("add_child", spell)
-	match spell.spell_type:
-		SpellType.Directional:
-			cast_directional_spell(spell, spell_pos)
-		SpellType.Ground:
-			spell_pos = wizard_cast_view.global_transform.origin
-			cast_ground_spell(spell, spell_pos)
-		SpellType.Target:
-			cast_target_spell(spell, spell_pos)
-	#can_throw_spell = false
+	spell.cast(spell_direction, spell_pos)
 	emit_signal("spell_casted", spell)
-	pass
-
-func cast_directional_spell(spell, spell_pos):
-	spell.transform.origin = spell_pos
-	spell.call_deferred("spell_dir", wizard.spell_direction(), true)
-	pass
-
-func cast_ground_spell(spell, spell_pos):
-	spell.transform.origin = spell_pos
-	pass 
-
-func cast_target_spell(spell, spell_pos):
-	spell.set_target(wizard.closest_enemy())
-	spell.transform.origin = spell_pos
 	pass

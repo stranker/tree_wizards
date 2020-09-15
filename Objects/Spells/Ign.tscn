@@ -41,6 +41,9 @@ script = SubResource( 1 )
 damage = 2
 spell_name = "Ign"
 mana_cost = 10
+spell_range = 6.0
+spell_area = 1.5
+spell_type = 0
 speed = 15.0
 
 [node name="Area" type="Area" parent="."]

@@ -17,6 +17,7 @@ var reseting : bool = false
 func _ready():
 	if spell_texture:
 		$Icon.texture = spell_texture
+		$Icon.self_modulate.a = 1
 	pass
 
 func on_click():
@@ -81,6 +82,7 @@ func learn():
 func _on_Anim_animation_finished(anim_name):
 	if anim_name == "Reset":
 		current_state = SpellState.CanClick
+		$Icon.self_modulate.a = 1
 		visible = false
 		$Anim.play("CanClick")
 	pass # Replace with function body.

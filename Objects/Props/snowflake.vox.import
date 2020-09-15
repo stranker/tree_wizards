@@ -1,0 +1,16 @@
+[remap]
+
+importer="MagicaVoxel.With.Extensions"
+type="Mesh"
+path="res://.import/snowflake.vox-29f722ca9f16db5be5027e1dc200362a.mesh"
+
+[deps]
+
+source_file="res://Objects/Props/snowflake.vox"
+dest_files=[ "res://.import/snowflake.vox-29f722ca9f16db5be5027e1dc200362a.mesh" ]
+
+[params]
+
+Scale=0.1
+GreedyMeshGenerator=true
+SnapToGround=false

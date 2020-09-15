@@ -1,0 +1,14 @@
+[remap]
+
+importer="Vox.Importer"
+type="Mesh"
+path="res://.import/fence.vox-7365d8c93ca8a73cae10911344308b62.mesh"
+
+[deps]
+
+source_file="res://Objects/Props/fence.vox"
+dest_files=[ "res://.import/fence.vox-7365d8c93ca8a73cae10911344308b62.mesh" ]
+
+[params]
+
+Scale=0.1

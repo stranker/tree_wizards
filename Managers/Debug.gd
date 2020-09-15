@@ -11,3 +11,11 @@ func debug(info):
 	var str_info = str(info)
 	debug_panel.set_debug(str_info)
 	pass
+
+func set_player_state(state):
+	debug_panel.set_player_state(state)
+	pass
+
+func set_visual_state(state):
+	debug_panel.set_visual_state(state)
+	pass

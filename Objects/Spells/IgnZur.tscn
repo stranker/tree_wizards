@@ -3,7 +3,7 @@
 [ext_resource path="res://UI/SelectionCircle.png" type="Texture" id=1]
 [ext_resource path="res://Objects/Spells/ign_mesh.vox" type="ArrayMesh" id=2]
 
-[sub_resource type="GDScript" id=5]
+[sub_resource type="GDScript" id=1]
 script/source = "extends \"res://Objects/Spells/GroundSpell.gd\"
 
 
@@ -15,16 +15,14 @@ func _ready():
 	queue_free()
 
 func _on_Area_body_entered(body):
-	print(body)
-	if body.is_in_group(\"Enemy\"):
-		body.take_damage(damage, Vector2.UP)
+	body.take_damage(damage, Vector2.UP)
 	pass # Replace with function body.
 "
 
-[sub_resource type="CapsuleShape" id=15]
+[sub_resource type="CapsuleShape" id=2]
 radius = 2.4
 
-[sub_resource type="SpatialMaterial" id=2]
+[sub_resource type="SpatialMaterial" id=3]
 flags_transparent = true
 flags_unshaded = true
 flags_do_not_receive_shadows = true
@@ -33,9 +31,9 @@ vertex_color_use_as_albedo = true
 vertex_color_is_srgb = true
 albedo_texture = ExtResource( 1 )
 
-[sub_resource type="QuadMesh" id=3]
+[sub_resource type="QuadMesh" id=4]
 
-[sub_resource type="Curve" id=4]
+[sub_resource type="Curve" id=5]
 _data = [ Vector2( 0, 0.130682 ), 0.0, 4.47976, 0, 1, Vector2( 0.183908, 0.954545 ), 0.684029, 0.684029, 0, 0, Vector2( 0.977011, 0.801136 ), -0.193429, 0.0, 1, 0 ]
 
 [sub_resource type="Gradient" id=6]
@@ -91,13 +89,13 @@ offsets = PoolRealArray( 0, 0.562914, 1 )
 colors = PoolColorArray( 1, 1, 1, 1, 1, 0.709804, 0.709804, 1, 1, 0.269531, 0.269531, 0 )
 
 [node name="IgnZur" type="Spatial"]
-script = SubResource( 5 )
+script = SubResource( 1 )
 damage = 10
 spell_name = "IgnZur"
 mana_cost = 50
-spell_type = 1
 spell_range = 6.0
-area_effect = 4.0
+spell_area = 4.5
+spell_type = 1
 
 [node name="Area" type="Area" parent="."]
 collision_layer = 16
@@ -105,37 +103,37 @@ collision_mask = 2
 
 [node name="CollisionShape" type="CollisionShape" parent="Area"]
 transform = Transform( 1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0.379704, 0 )
-shape = SubResource( 15 )
+shape = SubResource( 2 )
 
 [node name="Visual" type="Spatial" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.64314, 0 )
 
 [node name="Ring1" type="CPUParticles" parent="Visual"]
 transform = Transform( 1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, -0.562198, 0 )
-material_override = SubResource( 2 )
+material_override = SubResource( 3 )
 cast_shadow = 0
 emitting = false
 one_shot = true
 explosiveness = 1.0
-mesh = SubResource( 3 )
+mesh = SubResource( 4 )
 gravity = Vector3( 0, 0, 0 )
 scale_amount = 5.0
 scale_amount_random = 1.0
-scale_amount_curve = SubResource( 4 )
+scale_amount_curve = SubResource( 5 )
 color_ramp = SubResource( 6 )
 
 [node name="Ring2" type="CPUParticles" parent="Visual"]
 transform = Transform( 1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, -0.562198, 0 )
-material_override = SubResource( 2 )
+material_override = SubResource( 3 )
 cast_shadow = 0
 emitting = false
 one_shot = true
 explosiveness = 1.0
-mesh = SubResource( 3 )
+mesh = SubResource( 4 )
 gravity = Vector3( 0, 0, 0 )
 scale_amount = 4.2
 scale_amount_random = 1.0
-scale_amount_curve = SubResource( 4 )
+scale_amount_curve = SubResource( 5 )
 color_ramp = SubResource( 7 )
 
 [node name="Smoke" type="CPUParticles" parent="Visual"]

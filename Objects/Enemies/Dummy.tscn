@@ -8,11 +8,17 @@
 [sub_resource type="GDScript" id=1]
 script/source = "extends KinematicBody
 
+enum MovementState {IDLE, CHASING, FREEZE, LAST}
+
 onready var anim = $Anim
 export var health : int = 5
 export var killeable : bool = false
+export (MovementState) var movement_state = MovementState.IDLE
 var initial_health : int = 0
 var damage_scene = preload(\"res://UI/DamagePop.tscn\")
+var ice_scene = preload(\"res://Objects/Spells/IceCube.tscn\")
+
+var velocity : Vector3
 
 signal take_damage(value)
 
@@ -21,10 +27,24 @@ func _ready():
 	initial_health = health
 	pass
 
-func _input(event):
-	if event is InputEventKey:
-		if event.scancode == KEY_UP and !event.echo:
-			take_damage(1, Vector2.ZERO)
+func _state_machine(delta):
+	match movement_state:
+		MovementState.IDLE:
+			_idle_behavior(delta)
+		MovementState.CHASING:
+			_chase_behavior(delta)
+		MovementState.FREEZE:
+			_freeze_behavior(delta)
+	pass
+
+func _idle_behavior(delta):
+	pass
+
+func _chase_behavior(delta):
+	pass
+
+func _freeze_behavior(delta):
+	pass
 
 func take_damage(damage, knockback_dir):
 	health -= damage
@@ -34,11 +54,16 @@ func take_damage(damage, knockback_dir):
 		health = 0
 		if killeable:
 			anim.play(\"Dead\")
+			stop_effects()
 	else:
 		anim.play(\"Hit\")
 	if !killeable:
 		$HealthTimer.start()
 	pass
+
+func stop_effects():
+	for effect in $SpellEffect.get_children():
+		effect.stop()
 
 func pop_damage(val):
 	var damage_pop = damage_scene.instance()
@@ -51,9 +76,28 @@ func _on_HealthTimer_timeout():
 	$HealthBar._on_Enemy_dead()
 	pass # Replace with function body.
 
-func freeze(damage):
+func freeze(damage, time):
+	movement_state = MovementState.FREEZE
 	take_damage(damage, Vector3.ZERO)
+	create_ice(time)
 	pass
+
+func create_ice(time):
+	var ice_effect = get_spell_effect(\"ice\")
+	if ice_effect:
+		ice_effect.restart()
+	else:
+		var ice = ice_scene.instance()
+		$SpellEffect.add_child(ice)
+		ice.set_time(time)
+	pass
+
+func get_spell_effect(effect_type):
+	var spell_effect = null
+	for effect in $SpellEffect.get_children():
+		if effect.get_effect_type() == effect_type:
+			spell_effect = effect
+	return spell_effect
 
 func set_select(val):
 	$Selection.set_select(val)
@@ -232,6 +276,9 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7578, 0 )
 
 [node name="Selection" parent="." instance=ExtResource( 4 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.078191, 0 )
+
+[node name="SpellEffect" type="Spatial" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.880768, 0 )
 [connection signal="animation_finished" from="Anim" to="." method="_on_Anim_animation_finished"]
 [connection signal="timeout" from="HealthTimer" to="." method="_on_HealthTimer_timeout"]
 [connection signal="timeout" from="ReviveTimer" to="." method="_on_ReviveTimer_timeout"]

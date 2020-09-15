@@ -159,14 +159,14 @@ spell_words_path = [ NodePath("Anchor/Initial"), NodePath("Anchor/Ign"), NodePat
 modulate = Color( 1, 1, 1, 0 )
 
 [node name="Anchor" type="Control" parent="."]
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-margin_left = 544.668
-margin_top = 70.4404
-margin_right = 584.668
-margin_bottom = 110.44
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -38.636
+margin_top = -270.943
+margin_right = -35.636
+margin_bottom = -269.943
 mouse_filter = 2
 __meta__ = {
 "_edit_use_anchors_": false

@@ -1,0 +1,160 @@
+[gd_scene load_steps=10 format=2]
+
+[ext_resource path="res://UI/arrow_indicator.png" type="Texture" id=1]
+[ext_resource path="res://Assets/Sprites/Aura.png" type="Texture" id=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Spatial
+
+onready var arrow_cast = $ArrowCast
+onready var ground_cast = $GroundCast
+
+onready var arrow = $ArrowCast/Pivot/Arrow
+onready var arrow_pos = $ArrowCast/Pos
+onready var ground_pos = $GroundCast/Pivot/Pos
+onready var raycast = $GroundCast/Pivot/Pos/RayCast
+onready var ground_particles = $GroundCast/Pivot/Pos/Particles
+
+var current_spell_type : int = -1
+
+func _ready():
+	arrow_cast.visible = false
+	ground_cast.visible = false
+	SpellManager.connect(\"spell_info\", self, \"_on_spell_info\")
+	SpellManager.connect(\"spell_casted\", self, \"_on_spell_casted\")
+	pass
+
+func _on_spell_casted(_spell):
+	arrow_cast.visible = false
+	ground_cast.visible = false
+	current_spell_type = -1
+	set_process(false)
+	pass
+
+func _on_spell_info(spell_data : Dictionary):
+	current_spell_type = spell_data[\"spell_type\"]
+	match current_spell_type:
+		SpellManager.SpellType.Directional:
+			_set_arrow_cast(spell_data[\"spell_range\"], spell_data[\"spell_area\"])
+		SpellManager.SpellType.Ground:
+			_set_ground_cast(spell_data[\"spell_range\"], spell_data[\"spell_area\"])
+	set_process(true)
+	pass
+
+func _set_arrow_cast(spell_range, spell_area):
+	current_spell_type = SpellManager.SpellType.Directional
+	ground_cast.visible = false
+	arrow_cast.visible = true
+	arrow.scale.x = spell_range
+	arrow.scale.y = spell_area
+	arrow.transform.origin.x = spell_range * 0.5
+	pass
+
+func _set_ground_cast(spell_range, spell_area):
+	current_spell_type = SpellManager.SpellType.Ground
+	ground_cast.visible = true
+	arrow_cast.visible = false
+	ground_pos.transform.origin.z = spell_range
+	ground_particles.scale = Vector3.ONE * spell_area
+	pass
+
+func _process(delta):
+	match current_spell_type:
+		SpellManager.SpellType.Ground: 
+			_ground_behavior()
+		SpellManager.SpellType.Directional:
+			_directional_behavior()
+	pass
+
+func _ground_behavior():
+	if raycast.is_colliding():
+		ground_particles.global_transform.origin = raycast.get_collision_point() + Vector3(0,0.015,0)
+	pass
+
+func _directional_behavior():
+	pass
+
+func get_spell_pos():
+	match current_spell_type:
+		SpellManager.SpellType.Directional:
+			return arrow_pos.global_transform.origin
+		SpellManager.SpellType.Ground:
+			return ground_pos.global_transform.origin
+"
+
+[sub_resource type="QuadMesh" id=2]
+
+[sub_resource type="SpatialMaterial" id=3]
+flags_transparent = true
+flags_unshaded = true
+flags_do_not_receive_shadows = true
+flags_disable_ambient_light = true
+vertex_color_use_as_albedo = true
+albedo_color = Color( 0.737255, 0.00784314, 1, 0.823529 )
+albedo_texture = ExtResource( 1 )
+
+[sub_resource type="SpatialMaterial" id=8]
+flags_transparent = true
+flags_unshaded = true
+flags_do_not_receive_shadows = true
+flags_disable_ambient_light = true
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource( 2 )
+uv1_scale = Vector3( 2, 2, 2 )
+
+[sub_resource type="CylinderMesh" id=9]
+material = SubResource( 8 )
+top_radius = 0.5
+bottom_radius = 0.5
+height = 0.001
+rings = 3
+
+[sub_resource type="Curve" id=6]
+_data = [ Vector2( 0, 0.854545 ), 0.0, 0.297754, 0, 1, Vector2( 0.488506, 1 ), 0.0179749, 0.0179749, 0, 0, Vector2( 1, 1 ), 2.14311, 0.0, 0, 0 ]
+
+[sub_resource type="Gradient" id=7]
+offsets = PoolRealArray( 0, 0.523179, 0.993378, 1 )
+colors = PoolColorArray( 0.666667, 0.0117647, 1, 0.160784, 0.643137, 0.0117647, 0.964706, 0.776471, 0.522366, 0, 0.786621, 0.0596027, 1, 1, 1, 0 )
+
+[node name="CastViewHelper" type="Spatial"]
+script = SubResource( 1 )
+
+[node name="ArrowCast" type="Spatial" parent="."]
+
+[node name="Pivot" type="Spatial" parent="ArrowCast"]
+transform = Transform( -1.62921e-07, 0, -1, 0, 1, 0, 1, 0, -1.62921e-07, 0, 0, 0 )
+
+[node name="Arrow" type="MeshInstance" parent="ArrowCast/Pivot"]
+transform = Transform( 1, 2.98023e-08, 1.3027e-15, 0, -4.37114e-08, 1, 2.98023e-08, -1, -4.37114e-08, 0.5, 0.015, 1.49012e-08 )
+cast_shadow = 0
+mesh = SubResource( 2 )
+material/0 = SubResource( 3 )
+
+[node name="Pos" type="Position3D" parent="ArrowCast"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0.5 )
+
+[node name="GroundCast" type="Spatial" parent="."]
+
+[node name="Pivot" type="Spatial" parent="GroundCast"]
+
+[node name="Pos" type="Position3D" parent="GroundCast/Pivot"]
+
+[node name="RayCast" type="RayCast" parent="GroundCast/Pivot/Pos"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.6922, 0 )
+enabled = true
+cast_to = Vector3( 0, -10, 0 )
+collision_mask = 8
+
+[node name="Particles" type="CPUParticles" parent="GroundCast/Pivot/Pos"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0539825, 0 )
+amount = 3
+lifetime = 2.5
+mesh = SubResource( 9 )
+spread = 0.0
+gravity = Vector3( 0, 0, 0 )
+scale_amount = 1.5
+scale_amount_curve = SubResource( 6 )
+color_ramp = SubResource( 7 )
+__meta__ = {
+"_editor_description_": ""
+}
