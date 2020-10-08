@@ -26,7 +26,6 @@ GameManager="*res://Managers/GameManager.gd"
 CameraSystem="*res://Managers/CameraSystem.gd"
 SpellManager="*res://Managers/SpellManager.gd"
 MultiTouch="*res://MultiTouch.gd"
-VoxelSet="*res://addons/Voxel-Core/defaults/VoxelSet.default.gd"
 
 [debug]
 
@@ -41,7 +40,7 @@ window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PoolStringArray( "VoxImporter" )
+enabled=PoolStringArray( "VoxImporter", "radial_progress" )
 
 [input]
 

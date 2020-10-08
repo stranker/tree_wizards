@@ -70,7 +70,7 @@ damage = 5
 spell_name = "FaDor"
 mana_cost = 30
 spell_range = 0.0
-spell_area = 7.0
+spell_area = 6.0
 spell_type = 1
 
 [node name="Visual" type="Spatial" parent="."]

@@ -26,10 +26,10 @@ tracks/1/loop_wrap = true
 tracks/1/imported = false
 tracks/1/enabled = true
 tracks/1/keys = {
-"times": PoolRealArray( 0 ),
-"transitions": PoolRealArray( 1 ),
+"times": PoolRealArray( 0, 1 ),
+"transitions": PoolRealArray( 1, 1 ),
 "update": 0,
-"values": [ Color( 1, 1, 1, 1 ) ]
+"values": [ Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 1 ) ]
 }
 tracks/2/type = "value"
 tracks/2/path = NodePath("Icon:rect_scale")
@@ -118,10 +118,10 @@ tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
 tracks/0/keys = {
-"times": PoolRealArray( 0 ),
-"transitions": PoolRealArray( 1 ),
+"times": PoolRealArray( 0, 0.2 ),
+"transitions": PoolRealArray( 1, 1 ),
 "update": 0,
-"values": [ Color( 0.105882, 0.105882, 0.105882, 1 ) ]
+"values": [ Color( 0.105882, 0.105882, 0.105882, 1 ), Color( 0.105882, 0.105882, 0.105882, 1 ) ]
 }
 tracks/1/type = "value"
 tracks/1/path = NodePath("Icon:self_modulate")
@@ -130,10 +130,10 @@ tracks/1/loop_wrap = true
 tracks/1/imported = false
 tracks/1/enabled = true
 tracks/1/keys = {
-"times": PoolRealArray( 0 ),
-"transitions": PoolRealArray( 1 ),
+"times": PoolRealArray( 0, 0.2 ),
+"transitions": PoolRealArray( 1, 1 ),
 "update": 0,
-"values": [ Color( 0.282353, 0.282353, 0.282353, 1 ) ]
+"values": [ Color( 0.282353, 0.282353, 0.282353, 1 ), Color( 0.282353, 0.282353, 0.282353, 1 ) ]
 }
 
 [sub_resource type="Animation" id=4]
@@ -188,32 +188,28 @@ tracks/3/keys = {
 }
 
 [node name="SpellWord" type="Control" groups=[
-"Spell",
+"SpellButton",
 ]]
-anchor_left = 1.0
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-margin_left = -468.0
-margin_top = -102.0
-margin_right = -308.0
-margin_bottom = 58.0
+margin_right = 130.0
+margin_bottom = 130.0
 rect_scale = Vector2( 0.8, 0.8 )
 mouse_filter = 2
 script = ExtResource( 3 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
+spell_name = "Default"
+spell_texture = ExtResource( 1 )
+current_state = 4
 
 [node name="Glow" type="TextureRect" parent="."]
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-margin_left = -110.0
-margin_top = -110.0
-margin_right = 110.0
-margin_bottom = 110.0
+modulate = Color( 0.941176, 0.721569, 0.258824, 1 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -30.0
+margin_top = -30.0
+margin_right = 30.0
+margin_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 2
 rect_pivot_offset = Vector2( 110, 110 )
@@ -228,7 +224,6 @@ __meta__ = {
 [node name="Icon" type="TextureRect" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
-rect_scale = Vector2( 0.9, 0.9 )
 rect_pivot_offset = Vector2( 82.5256, 78.9494 )
 mouse_filter = 2
 texture = ExtResource( 1 )

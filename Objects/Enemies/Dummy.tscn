@@ -14,17 +14,25 @@ onready var anim = $Anim
 export var health : int = 5
 export var killeable : bool = false
 export (MovementState) var movement_state = MovementState.IDLE
-var initial_health : int = 0
+onready var initial_health : int = health
 var damage_scene = preload(\"res://UI/DamagePop.tscn\")
 var ice_scene = preload(\"res://Objects/Spells/IceCube.tscn\")
 
 var velocity : Vector3
 
 signal take_damage(value)
+signal dead
+
+func initialize():
+	health = initial_health
+	$HealthBar.set_target(self)
+	$HealthBar.visible = false
+	$Skin.visible = true
+	anim.play(\"Idle\")
+	pass
 
 func _ready():
-	$HealthBar.set_target(self)
-	initial_health = health
+	initialize()
 	pass
 
 func _state_machine(delta):
@@ -52,6 +60,7 @@ func take_damage(damage, knockback_dir):
 	pop_damage(damage)
 	if health <= 0:
 		health = 0
+		emit_signal(\"dead\")
 		if killeable:
 			anim.play(\"Dead\")
 			stop_effects()
@@ -72,8 +81,7 @@ func pop_damage(val):
 	damage_pop.global_transform.origin = $DamagePos.global_transform.origin
 
 func _on_HealthTimer_timeout():
-	health = initial_health 
-	$HealthBar._on_Enemy_dead()
+	initialize()
 	pass # Replace with function body.
 
 func freeze(damage, time):
@@ -111,10 +119,19 @@ func _on_Anim_animation_finished(anim_name):
 
 
 func _on_ReviveTimer_timeout():
-	$Skin.visible = true
-	anim.play(\"Idle\")
-	health = initial_health
-	$HealthBar._on_Enemy_dead()
+	initialize()
+	pass # Replace with function body.
+
+
+func _on_VisibilityEnabler_screen_entered():
+	$HealthBar.visible = true
+	Debug.debug(\"Entro\")
+	pass # Replace with function body.
+
+
+func _on_VisibilityEnabler_screen_exited():
+	Debug.debug(\"Adios\")
+	$HealthBar.visible = false
 	pass # Replace with function body.
 "
 
@@ -279,6 +296,12 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.078191, 0 )
 
 [node name="SpellEffect" type="Spatial" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.880768, 0 )
+
+[node name="VisibilityEnabler" type="VisibilityEnabler" parent="."]
+transform = Transform( 0.30583, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.874638, 0 )
+aabb = AABB( -1.12325, -0.838115, -0.842793, 2.24649, 1.67623, 1.68559 )
 [connection signal="animation_finished" from="Anim" to="." method="_on_Anim_animation_finished"]
 [connection signal="timeout" from="HealthTimer" to="." method="_on_HealthTimer_timeout"]
 [connection signal="timeout" from="ReviveTimer" to="." method="_on_ReviveTimer_timeout"]
+[connection signal="screen_entered" from="VisibilityEnabler" to="." method="_on_VisibilityEnabler_screen_entered"]
+[connection signal="screen_exited" from="VisibilityEnabler" to="." method="_on_VisibilityEnabler_screen_exited"]

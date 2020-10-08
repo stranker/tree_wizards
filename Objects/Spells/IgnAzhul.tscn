@@ -1,0 +1,116 @@
+[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://Objects/Props/smoke.vox" type="ArrayMesh" id=1]
+[ext_resource path="res://Objects/Spells/ign_mesh.vox" type="ArrayMesh" id=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends \"res://Objects/Spells/TargetSpell.gd\"
+
+export var time_between_damage : float = 0.5
+export var damage_count : int = 3
+var current_count : int = 0
+
+onready var damage_timer = $DamageTimer
+
+func _ready():
+	damage_timer.wait_time = time_between_damage
+	damage_timer.start()
+	pass
+
+func _process(delta):
+	pass
+
+func _on_DamageTimer_timeout():
+	if !target:
+		damage_timer.stop()
+		call_deferred(\"queue_free\")
+		return
+	current_count += 1
+	target.take_damage(damage, Vector3.ZERO)
+	$DamageTimer.start()
+	if current_count >= damage_count:
+		call_deferred(\"queue_free\")
+	pass
+"
+
+[sub_resource type="SpatialMaterial" id=2]
+flags_transparent = true
+flags_unshaded = true
+flags_do_not_receive_shadows = true
+flags_disable_ambient_light = true
+vertex_color_use_as_albedo = true
+vertex_color_is_srgb = true
+
+[sub_resource type="Curve" id=3]
+max_value = 1.5
+_data = [ Vector2( 0, 0 ), 0.0, 3.29957, 0, 0, Vector2( 1, 1.5 ), -0.0677922, 0.0, 0, 0 ]
+
+[sub_resource type="Gradient" id=4]
+offsets = PoolRealArray( 0, 0.430464, 0.688742, 1 )
+colors = PoolColorArray( 0.976563, 0.930786, 0.930786, 1, 0.882353, 0.843137, 0.843137, 0.45098, 0, 0, 0, 0.494118, 0, 0, 0, 0 )
+
+[sub_resource type="SpatialMaterial" id=5]
+flags_transparent = true
+flags_unshaded = true
+flags_do_not_receive_shadows = true
+flags_disable_ambient_light = true
+vertex_color_use_as_albedo = true
+vertex_color_is_srgb = true
+params_billboard_mode = 1
+params_billboard_keep_scale = true
+
+[sub_resource type="Gradient" id=6]
+colors = PoolColorArray( 1, 1, 1, 1, 1, 1, 1, 0 )
+
+[node name="IgnAzhul" type="Spatial"]
+script = SubResource( 1 )
+damage = 3
+spell_name = "Ign Azhul"
+spell_range = 0.0
+spell_area = 12.0
+spell_type = 2
+
+[node name="DamageTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="Visual" type="Spatial" parent="."]
+
+[node name="Smoke" type="CPUParticles" parent="Visual"]
+material_override = SubResource( 2 )
+cast_shadow = 0
+lifetime = 0.5
+explosiveness = 0.9
+mesh = ExtResource( 1 )
+spread = 180.0
+gravity = Vector3( 0, 0, 0 )
+initial_velocity = 5.0
+scale_amount_random = 1.0
+scale_amount_curve = SubResource( 3 )
+color_ramp = SubResource( 4 )
+
+[node name="Fire" type="CPUParticles" parent="Visual"]
+transform = Transform( 1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0 )
+material_override = SubResource( 5 )
+cast_shadow = 0
+amount = 10
+lifetime = 0.5
+explosiveness = 0.9
+lifetime_randomness = 0.2
+mesh = ExtResource( 2 )
+emission_shape = 3
+emission_points = PoolVector3Array( 0.459664, 0.747831, 0.309347, 0.136166, 0.147561, -0.750307, 0.483261, 0.752817, 0.31337, 0.250814, -0.0779153, 0.815044, 0.132999, -0.313433, -0.748959, -0.592236, 0.679616, -0.166581, 0.856077, 0.148602, -0.0112177, 0.0835557, 0.636134, 0.592513, 0.178928, -0.119092, -0.113096, 0.424425, 0.370222, -0.676485, 0.425383, -0.898422, 0.0352707, 0.648078, 0.42865, -0.539448, 0.882478, -0.0680615, 0.18571, -0.4049, 0.0544813, -0.20279, 0.393291, -0.283273, -0.795016, -0.805865, -0.25439, 0.163242, -0.132413, -0.00176138, 0.0958427, 0.562676, 0.196105, 0.0865939, -0.240351, 0.209933, -0.339719, -0.136272, 0.778913, 0.373307, -0.177566, -0.824128, 0.458799, -0.565628, 0.367894, -0.402277, 0.0973948, -0.607084, -0.405916, -0.423594, 0.17695, 0.354385, 0.55202, 0.0658645, -0.185625, 0.122608, 0.955812, -0.146409, 0.125965, 0.757811, -0.0846639, -0.09355, 0.127677, -0.684324, -0.682959, 0.593107, -0.318971, -0.0490698, 0.826897, -0.540997, -0.44386, -0.401037, -0.0183592, -0.490011, -0.0421824, -0.496357, 0.981025, 0.0490187, -0.00589335, -0.4421, -0.286125, -0.631098, 0.108773, 0.735476, -0.406875, 0.29081, 0.341578, -0.055727, 0.324207, -0.562519, -0.556468, -0.370262, 0.123881, 0.254671, -0.159129, 0.0644131, -0.983005, -0.271675, -0.565547, 0.281269, -0.811063, 0.23097, 0.302052, -0.0377381, -0.0142596, -0.61795, 0.821513, 0.0388041, -0.513743, -0.445881, -0.803439, -0.260235, -0.255206, -0.650612, 0.142642, 0.259625, -0.498899, 0.53181, 0.498461, 0.216881, 0.0297104, -0.769028, -0.361378, -0.341204, -0.699228, -0.661642, -0.25547, 0.207, -0.420271, 0.300379, 0.446809, 0.0624616, 0.462883, -0.793685, -0.387213, 0.090643, -0.819727, -0.155312, 0.173257, -0.132813, 0.155596, 0.797921, 0.144019, -0.434568, 0.555777, -0.390901, 0.496419, 0.0374548, 0.886104, -0.130223, -0.191911, -0.165878, -0.570275, -0.515913, 0.210697, -0.928782, 0.0408731, 0.649807, 0.538463, -0.0823138, -0.261565, 0.39198, 0.125802, 0.180057, 0.754881, 0.365776, 0.373585, -0.277783, -0.202108, -0.0316063, 0.955839, 0.0459751 )
+flag_rotate_y = true
+flag_disable_z = true
+spread = 180.0
+gravity = Vector3( 0, 0, 0 )
+initial_velocity = 12.0
+initial_velocity_random = 0.42
+orbit_velocity = 1.6
+orbit_velocity_random = 0.1
+orbit_velocity_curve = null
+radial_accel = -5.0
+angle_random = 1.0
+scale_amount = 0.6
+scale_amount_random = 1.0
+color_ramp = SubResource( 6 )
+[connection signal="timeout" from="DamageTimer" to="." method="_on_DamageTimer_timeout"]

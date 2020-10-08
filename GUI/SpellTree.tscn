@@ -1,18 +1,15 @@
-[gd_scene load_steps=12 format=2]
+[gd_scene load_steps=11 format=2]
 
 [ext_resource path="res://GUI/SpellWord.tscn" type="PackedScene" id=1]
-[ext_resource path="res://Assets/Sprites/Spells/ign_icon.png" type="Texture" id=2]
+[ext_resource path="res://GUI/FireSpellTree.tscn" type="PackedScene" id=2]
 [ext_resource path="res://GUI/faded_circle.png" type="Texture" id=3]
-[ext_resource path="res://Assets/Sprites/Spells/fa_icon.png" type="Texture" id=4]
+[ext_resource path="res://GUI/IceSpellTree.tscn" type="PackedScene" id=4]
 [ext_resource path="res://UI/ControlArea.tscn" type="PackedScene" id=5]
-[ext_resource path="res://Assets/Sprites/Spells/mur_icon.png" type="Texture" id=6]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends Control
 
-export (Array, NodePath) var spell_words_path
-var spell_words : Array = []
-var casted_words : Array = []
+var spell_buttons : Array = []
 
 export var casting : bool = false
 export var screen_touched : bool = false
@@ -21,14 +18,15 @@ var can_cast : bool = true
 
 var current_pointer = -1
 
-signal cast_spell(spell_list)
+signal on_cast_spell
+signal on_spell(spell)
 
 func _ready():
-	for word_path in spell_words_path:
-		var spell_word = get_node(word_path)
-		spell_word.connect(\"word_pressed\", self, \"on_word_spell_pressed\")
-		connect(\"cast_spell\", SpellManager, \"on_cast_spell\")
-		spell_words.append(spell_word)
+	connect(\"on_cast_spell\", SpellManager, \"on_cast_spell\")
+	connect(\"on_spell\", SpellManager, \"on_spell\")
+	spell_buttons = get_tree().get_nodes_in_group(\"SpellButton\")
+	for spell_button in spell_buttons:
+		spell_button.connect(\"spell_pressed\", self, \"on_spell_pressed\")
 	pass
 
 func _input(event):
@@ -66,11 +64,8 @@ func on_touch_screen(event : InputEventScreenTouch):
 	if screen_touched:
 		if !casting:
 			if $Anchor/Initial.get_global_rect().has_point(event.position):
-				casting = true
-				$Anchor/Initial.on_click()
+				initial_cast()
 				$SpellParticles.global_position = event.position
-				$SpellParticles.emitting = true
-				$SpellParticles/EffectParticles.emitting = true
 	else:
 		screen_drag = false
 		current_pointer = -1
@@ -79,8 +74,18 @@ func on_touch_screen(event : InputEventScreenTouch):
 			cast_spell()
 	pass
 
+func initial_cast():
+	casting = true
+	$Anchor/Initial.on_click()
+	$SpellParticles.emitting = true
+	$SpellParticles/EffectParticles.emitting = true
+	pass
+
 func on_drag_screen(event : InputEventScreenDrag):
 	if screen_touched:
+		if !casting:
+			if $Anchor/Initial.get_global_rect().has_point(event.position):
+				initial_cast()
 		screen_drag = true
 		$SpellParticles.global_position = event.position
 		check_spell_rect(event.position)
@@ -88,24 +93,19 @@ func on_drag_screen(event : InputEventScreenDrag):
 
 func check_spell_rect(ev_position):
 	var spell_activated = false
-	for spell_word in spell_words:
-		if spell_word.can_be_clicked() and !spell_activated:
-			if spell_word.get_global_rect().has_point(ev_position):
-				spell_word.on_click()
+	for spell_button in spell_buttons:
+		if spell_button.can_be_clicked() and !spell_activated:
+			if spell_button.get_global_rect().has_point(ev_position):
+				spell_button.on_click()
 				spell_activated = true
 	pass
 
-func on_word_spell_pressed(spell_name):
-	if casted_words.has(spell_name):
-		return
-	casted_words.append(spell_name)
-	SpellManager.check_spell_info(casted_words)
+func on_spell_pressed(spell):
+	emit_signal(\"on_spell\", spell)
 	pass
 
 func cast_spell():
-	if !casted_words.empty():
-		emit_signal(\"cast_spell\", casted_words.duplicate())
-		can_cast = false
+	emit_signal(\"on_cast_spell\")
 	casting = false
 	screen_drag = false
 	$SpellParticles.emitting = false
@@ -114,21 +114,20 @@ func cast_spell():
 	pass
 
 func reset_words():
-	for word in spell_words:
-		word.reset()
-	casted_words.clear()
+	for spell_button in spell_buttons:
+		spell_button.reset()
 	pass
 
 func _on_Wizard_learn_spell(spell_name : String):
-	for spell in spell_words:
-		if spell.spell_name.to_lower() == spell_name.to_lower():
-			spell.learn()
+	for spell_button in spell_buttons:
+		if spell_button.spell_name.to_lower() == spell_name.to_lower():
+			spell_button.learn()
 			return
-	pass # Replace with function body.
+	pass
 
 func _on_SpellManager_cast_ready():
 	can_cast = true
-	pass # Replace with function body.
+	pass
 "
 
 [sub_resource type="Curve" id=2]
@@ -153,7 +152,6 @@ script = SubResource( 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
-spell_words_path = [ NodePath("Anchor/Initial"), NodePath("Anchor/Ign"), NodePath("Anchor/Fa"), NodePath("Anchor/Zur"), NodePath("Anchor/Dor") ]
 
 [node name="ControlArea" parent="." instance=ExtResource( 5 )]
 modulate = Color( 1, 1, 1, 0 )
@@ -163,67 +161,35 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_left = -38.636
-margin_top = -270.943
-margin_right = -35.636
-margin_bottom = -269.943
+margin_left = -178.772
+margin_top = -300.272
+margin_right = -177.772
+margin_bottom = -299.272
 mouse_filter = 2
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="Initial" parent="Anchor" instance=ExtResource( 1 )]
-margin_left = -132.439
-margin_top = -43.3953
-margin_right = 0.561035
-margin_bottom = 89.6047
-next_words = [ NodePath("../Ign"), NodePath("../Fa") ]
+margin_right = 133.0
+margin_bottom = 133.0
 learned = true
+initial_button = true
+next_spells = [ NodePath("../FireSpellTree/Ign"), NodePath("../IceSpellTree/Fa") ]
 
-[node name="Ign" parent="Anchor" instance=ExtResource( 1 )]
-visible = false
-margin_left = -255.241
-margin_top = -114.459
-margin_right = -127.241
-margin_bottom = 13.5403
-spell_name = "Ign"
-next_words = [ NodePath("../Zur"), NodePath("../Dor") ]
-learned = true
-spell_texture = ExtResource( 2 )
+[node name="FireSpellTree" parent="Anchor" instance=ExtResource( 2 )]
+margin_left = -107.029
+margin_top = -90.3798
+margin_right = -107.029
+margin_bottom = -90.3798
 
-[node name="Fa" parent="Anchor" instance=ExtResource( 1 )]
-visible = false
-margin_left = -114.915
-margin_top = -157.412
-margin_right = 13.0847
-margin_bottom = -29.4121
-spell_name = "Fa"
-next_words = [ NodePath("../Zur"), NodePath("../Dor") ]
-learned = true
-spell_texture = ExtResource( 4 )
-
-[node name="Zur" parent="Anchor" instance=ExtResource( 1 )]
-visible = false
-margin_left = -284.751
-margin_top = -254.781
-margin_right = -156.751
-margin_bottom = -126.781
-spell_name = "Zur"
-learned = true
-spell_texture = ExtResource( 6 )
-
-[node name="Dor" parent="Anchor" instance=ExtResource( 1 )]
-visible = false
-margin_left = -144.903
-margin_top = -276.8
-margin_right = -16.9033
-margin_bottom = -148.8
-spell_name = "Dor"
-learned = true
-spell_texture = ExtResource( 6 )
+[node name="IceSpellTree" parent="Anchor" instance=ExtResource( 4 )]
+margin_left = 54.7035
+margin_top = -128.434
+margin_right = 54.7035
+margin_bottom = -128.434
 
 [node name="SpellParticles" type="CPUParticles2D" parent="."]
-visible = false
 position = Vector2( 1338.59, 613.437 )
 emitting = false
 amount = 40
@@ -265,3 +231,7 @@ scale_amount = 0.12
 scale_amount_random = 0.1
 scale_amount_curve = SubResource( 4 )
 color_ramp = SubResource( 5 )
+
+[editable path="Anchor/FireSpellTree"]
+
+[editable path="Anchor/IceSpellTree"]

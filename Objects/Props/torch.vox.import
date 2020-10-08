@@ -1,0 +1,14 @@
+[remap]
+
+importer="Vox.Importer"
+type="Mesh"
+path="res://.import/torch.vox-ae9e3c2e826b54bd95ad8f18ddda4668.mesh"
+
+[deps]
+
+source_file="res://Objects/Props/torch.vox"
+dest_files=[ "res://.import/torch.vox-ae9e3c2e826b54bd95ad8f18ddda4668.mesh" ]
+
+[params]
+
+Scale=0.1

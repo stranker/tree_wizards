@@ -1,0 +1,44 @@
+[gd_scene load_steps=8 format=2]
+
+[ext_resource path="res://GUI/SpellWord.tscn" type="PackedScene" id=1]
+[ext_resource path="res://Assets/Sprites/Spells/ign_icon.png" type="Texture" id=2]
+[ext_resource path="res://Assets/Sprites/Spells/ignazhul_icon.png" type="Texture" id=3]
+[ext_resource path="res://Assets/Sprites/Spells/ignfam_icon.png" type="Texture" id=4]
+[ext_resource path="res://Objects/Spells/Ign.tscn" type="PackedScene" id=5]
+[ext_resource path="res://Objects/Spells/IgnZur.tscn" type="PackedScene" id=6]
+[ext_resource path="res://Objects/Spells/IgnAzhul.tscn" type="PackedScene" id=7]
+
+[node name="FireSpellTree" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Ign" parent="." instance=ExtResource( 1 )]
+spell_name = "Ign"
+spell_texture = ExtResource( 2 )
+spell_scene = ExtResource( 5 )
+learned = true
+next_spells = [ NodePath("../IgnFam") ]
+
+[node name="IgnFam" parent="." instance=ExtResource( 1 )]
+margin_left = -132.229
+margin_top = -24.0
+margin_right = -2.22887
+margin_bottom = 106.0
+spell_name = "Ign Fam"
+spell_texture = ExtResource( 4 )
+spell_scene = ExtResource( 6 )
+learned = true
+next_spells = [ NodePath("../IgnAhzul") ]
+
+[node name="IgnAhzul" parent="." instance=ExtResource( 1 )]
+margin_left = -156.229
+margin_top = -146.371
+margin_right = -26.2289
+margin_bottom = -16.3711
+spell_name = "Ign Ahzul"
+spell_texture = ExtResource( 3 )
+spell_scene = ExtResource( 7 )
+learned = true

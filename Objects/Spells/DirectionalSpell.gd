@@ -7,7 +7,6 @@ export var speed : float = 3
 var velocity : Vector3
 var dir : Vector3
 
-var initial_pos : Vector3 = Vector3.ZERO
 var accumulated_pos : Vector3 = Vector3.ZERO
 
 func initialize():
@@ -28,7 +27,7 @@ func _process(delta):
 
 func check_position():
 	if accumulated_pos.length() > spell_range:
-		queue_free()
+		call_deferred("queue_free")
 	pass
 
 func _set_spell_dir(direction : Vector3):
@@ -39,8 +38,7 @@ func _set_spell_dir(direction : Vector3):
 		visual.rotation.y = Vector2(dir.z, dir.x).angle()
 	pass
 
-func cast(direction, pos):
-	.cast(direction, pos)
+func cast(current_enemy, direction, pos):
+	.cast(current_enemy, direction, pos)
 	_set_spell_dir(direction)
-	initial_pos = global_transform.origin
 	pass

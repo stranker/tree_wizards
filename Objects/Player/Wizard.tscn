@@ -1,20 +1,15 @@
-[gd_scene load_steps=32 format=2]
+[gd_scene load_steps=28 format=2]
 
 [ext_resource path="res://GUI/SpellTree.tscn" type="PackedScene" id=1]
 [ext_resource path="res://GUI/Joystick.tscn" type="PackedScene" id=2]
-[ext_resource path="res://Objects/Spells/Ign.tscn" type="PackedScene" id=3]
 [ext_resource path="res://GUI/BigCircle.png" type="Texture" id=4]
 [ext_resource path="res://Objects/Player/wizard.vox" type="ArrayMesh" id=5]
-[ext_resource path="res://Utility/Spells.tscn" type="PackedScene" id=6]
-[ext_resource path="res://Objects/Spells/Fa.tscn" type="PackedScene" id=7]
 [ext_resource path="res://Assets/Fonts/Iron Latch.TTF" type="DynamicFontData" id=8]
 [ext_resource path="res://Assets/Fonts/Iron100.tres" type="DynamicFont" id=9]
 [ext_resource path="res://UI/CastViewHelper.tscn" type="PackedScene" id=10]
-[ext_resource path="res://Objects/Spells/FaDor.tscn" type="PackedScene" id=11]
-[ext_resource path="res://Objects/Spells/FaZur.tscn" type="PackedScene" id=12]
 [ext_resource path="res://UI/ManaBar.tscn" type="PackedScene" id=13]
 [ext_resource path="res://Objects/Misc/ArrowPointer.tscn" type="PackedScene" id=14]
-[ext_resource path="res://Objects/Spells/IgnZur.tscn" type="PackedScene" id=15]
+[ext_resource path="res://UI/DashBar.tscn" type="PackedScene" id=16]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends KinematicBody
@@ -36,6 +31,8 @@ export var gravity : float = 200
 export var jump_cut_height : float = 0.5
 export var max_mana : int = 100
 export var mana_regen : float = 2
+export var max_dash : int = 4
+onready var dash_count : int = max_dash
 export (PlayerState) var player_state = PlayerState.FALL
 export (VisualState) var visual_state = VisualState.NORMAL
 
@@ -66,6 +63,7 @@ func _ready():
 	$GUI/GUI/ManaBar.set_target(self)
 	GameManager.wizard = self
 	check_android()
+	$GUI/GUI/Dash/DashBar.set_max(max_dash)
 	pass
 
 func check_android():
@@ -128,9 +126,17 @@ func _dash_state():
 	pass
 
 func dash():
+	if is_dashing:
+		return
+	if dash_count <= 0:
+		return
+	dash_count -= 1
 	player_state = PlayerState.DASH
 	if $DashTimer.is_stopped():
 		$DashTimer.start()
+	if $DashRecover.is_stopped():
+		$DashRecover.start()
+	$GUI/GUI/Dash/DashBar.set_value(dash_count)
 	pass
 
 func jump():
@@ -344,9 +350,17 @@ func _on_Dash_gui_input(event):
 
 func get_cast_helper():
 	return $Visual/CastViewHelper
+
+func _on_DashRecover_timeout():
+	dash_count += 1
+	dash_count = clamp(dash_count, 0, max_dash)
+	$GUI/GUI/Dash/DashBar.set_value(dash_count)
+	if dash_count < max_dash:
+		$DashRecover.start()
+	pass # Replace with function body.
 "
 
-[sub_resource type="Animation" id=21]
+[sub_resource type="Animation" id=2]
 length = 0.1
 loop = true
 tracks/0/type = "value"
@@ -362,7 +376,7 @@ tracks/0/keys = {
 "values": [ Vector3( 0, 90, 0 ) ]
 }
 
-[sub_resource type="Animation" id=22]
+[sub_resource type="Animation" id=3]
 length = 0.6
 loop = true
 tracks/0/type = "value"
@@ -378,7 +392,7 @@ tracks/0/keys = {
 "values": [ Vector3( 10, 90, 0 ), Vector3( -10, 90, 0 ) ]
 }
 
-[sub_resource type="SpatialMaterial" id=8]
+[sub_resource type="SpatialMaterial" id=4]
 flags_transparent = true
 flags_unshaded = true
 flags_do_not_receive_shadows = true
@@ -386,18 +400,18 @@ flags_disable_ambient_light = true
 vertex_color_use_as_albedo = true
 albedo_color = Color( 1, 1, 1, 0.882353 )
 
-[sub_resource type="CubeMesh" id=9]
-material = SubResource( 8 )
+[sub_resource type="CubeMesh" id=5]
+material = SubResource( 4 )
 size = Vector3( 0.1, 0.1, 0.1 )
 
-[sub_resource type="Curve" id=10]
+[sub_resource type="Curve" id=6]
 _data = [ Vector2( 0, 0.994318 ), 0.0, 0.0, 0, 0, Vector2( 1, 0.0306818 ), -0.342015, 0.0, 0, 0 ]
 
-[sub_resource type="Gradient" id=11]
+[sub_resource type="Gradient" id=7]
 offsets = PoolRealArray( 0, 0.463576, 1 )
 colors = PoolColorArray( 1, 1, 1, 1, 1, 1, 1, 0.827815, 1, 1, 1, 0 )
 
-[sub_resource type="GDScript" id=12]
+[sub_resource type="GDScript" id=8]
 script/source = "extends Control
 
 onready var spell_cast_text = get_node(\"SpellCast/SpellCast\")
@@ -429,13 +443,18 @@ func remove_android_hud():
 	pass
 "
 
-[sub_resource type="StyleBoxFlat" id=13]
+[sub_resource type="DynamicFont" id=9]
+size = 28
+use_filter = true
+font_data = ExtResource( 8 )
+
+[sub_resource type="StyleBoxFlat" id=10]
 bg_color = Color( 0.839216, 0.839216, 0.839216, 1 )
 
-[sub_resource type="StyleBoxFlat" id=14]
+[sub_resource type="StyleBoxFlat" id=11]
 bg_color = Color( 0.211765, 0.211765, 0.211765, 1 )
 
-[sub_resource type="GDScript" id=15]
+[sub_resource type="GDScript" id=12]
 script/source = "extends ProgressBar
 
 export var cooldown_time : float = 1
@@ -456,7 +475,7 @@ func on_cast_ready():
 	pass # Replace with function body.
 "
 
-[sub_resource type="Animation" id=16]
+[sub_resource type="Animation" id=13]
 length = 4.0
 tracks/0/type = "value"
 tracks/0/path = NodePath(".:percent_visible")
@@ -483,12 +502,12 @@ tracks/1/keys = {
 "values": [ Color( 1, 1, 1, 0 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 0 ) ]
 }
 
-[sub_resource type="DynamicFont" id=17]
+[sub_resource type="DynamicFont" id=14]
 size = 26
 use_filter = true
 font_data = ExtResource( 8 )
 
-[sub_resource type="Animation" id=18]
+[sub_resource type="Animation" id=15]
 length = 1.5
 tracks/0/type = "value"
 tracks/0/path = NodePath(".:rect_position")
@@ -515,10 +534,10 @@ tracks/1/keys = {
 "values": [ Color( 1, 1, 1, 0 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 0 ) ]
 }
 
-[sub_resource type="SphereShape" id=19]
+[sub_resource type="SphereShape" id=16]
 radius = 0.41
 
-[sub_resource type="SphereShape" id=20]
+[sub_resource type="SphereShape" id=17]
 radius = 12.0
 
 [node name="Wizard" type="KinematicBody" groups=[
@@ -554,8 +573,8 @@ __meta__ = {
 
 [node name="Anim" type="AnimationPlayer" parent="Visual"]
 autoplay = "Idle"
-anims/Idle = SubResource( 21 )
-anims/Walk = SubResource( 22 )
+anims/Idle = SubResource( 2 )
+anims/Walk = SubResource( 3 )
 
 [node name="CastViewHelper" parent="Visual" instance=ExtResource( 10 )]
 
@@ -571,7 +590,7 @@ lifetime = 2.0
 randomness = 1.0
 lifetime_randomness = 0.5
 local_coords = false
-mesh = SubResource( 9 )
+mesh = SubResource( 5 )
 emission_shape = 3
 emission_points = PoolVector3Array( -0.442967, -0.0507014, 0.14251, -0.286709, 0.0363602, 0.130668, -0.400888, -0.00635691, -0.113312, -0.246584, 0.0153767, 0.149695, -0.318793, 0.035655, 0.0149778, -0.329327, 0.0297147, -0.0862136, -0.42228, 0.0397747, -0.0571296, -0.41801, -0.048882, 0.193152, -0.368727, 0.047398, 0.100737, -0.430744, 0.0190734, 0.140851, -0.424441, 0.0163286, -0.0471706, -0.326575, -0.0256334, -0.158496, -0.431621, -0.0374855, 0.113508, -0.293301, 0.0246388, -0.039595, -0.250512, 0.00346267, 0.158368, -0.295813, 0.0289752, -0.156752 )
 flag_align_y = true
@@ -581,8 +600,8 @@ gravity = Vector3( 0, 0.7, 0 )
 initial_velocity_random = 1.0
 scale_amount = 1.5
 scale_amount_random = 1.0
-scale_amount_curve = SubResource( 10 )
-color_ramp = SubResource( 11 )
+scale_amount_curve = SubResource( 6 )
+color_ramp = SubResource( 7 )
 hue_variation = 0.99
 
 [node name="GUI" type="CanvasLayer" parent="."]
@@ -592,7 +611,7 @@ follow_viewport_enable = true
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
-script = SubResource( 12 )
+script = SubResource( 8 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -614,6 +633,17 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="Label" type="Label" parent="GUI/GUI/Jump"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_fonts/font = SubResource( 9 )
+text = "JUMP"
+align = 1
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
 [node name="Dash" type="TextureButton" parent="GUI/GUI"]
 anchor_left = 1.0
 anchor_top = 1.0
@@ -629,6 +659,21 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="Label" type="Label" parent="GUI/GUI/Dash"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_fonts/font = SubResource( 9 )
+text = "DASH"
+align = 1
+valign = 1
+
+[node name="DashBar" parent="GUI/GUI/Dash" instance=ExtResource( 16 )]
+show_behind_parent = true
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+
 [node name="SpellColdown" type="ProgressBar" parent="GUI/GUI"]
 visible = false
 anchor_left = 0.5
@@ -640,12 +685,12 @@ margin_top = -50.0
 margin_right = 60.0
 margin_bottom = -42.0
 mouse_filter = 2
-custom_styles/fg = SubResource( 13 )
-custom_styles/bg = SubResource( 14 )
+custom_styles/fg = SubResource( 10 )
+custom_styles/bg = SubResource( 11 )
 max_value = 2.0
 value = 1.0
 percent_visible = false
-script = SubResource( 15 )
+script = SubResource( 12 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -667,7 +712,7 @@ __meta__ = {
 }
 
 [node name="Anim" type="AnimationPlayer" parent="GUI/GUI/SpellLearned"]
-anims/Learned = SubResource( 16 )
+anims/Learned = SubResource( 13 )
 
 [node name="Joystick" parent="GUI/GUI" instance=ExtResource( 2 )]
 margin_left = 121.043
@@ -692,7 +737,7 @@ __meta__ = {
 self_modulate = Color( 1, 1, 1, 0 )
 anchor_right = 1.0
 anchor_bottom = 1.0
-custom_fonts/font = SubResource( 17 )
+custom_fonts/font = SubResource( 14 )
 text = "Mur"
 align = 1
 __meta__ = {
@@ -700,7 +745,7 @@ __meta__ = {
 }
 
 [node name="Anim" type="AnimationPlayer" parent="GUI/GUI/SpellCast/SpellCast"]
-anims/Casted = SubResource( 18 )
+anims/Casted = SubResource( 15 )
 
 [node name="ManaBar" parent="GUI/GUI" instance=ExtResource( 13 )]
 margin_left = 15.0
@@ -710,31 +755,26 @@ margin_bottom = -667.0
 
 [node name="CapsuleCollider" type="CollisionShape" parent="."]
 transform = Transform( 1, 0, 0, 0, -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, 0.4, 0 )
-shape = SubResource( 19 )
+shape = SubResource( 16 )
 
 [node name="EnemyDetection" type="Area" parent="."]
 
 [node name="CollisionShape" type="CollisionShape" parent="EnemyDetection"]
-shape = SubResource( 20 )
-
-[node name="Spells" parent="." instance=ExtResource( 6 )]
-spells_dic = {
-"Fa": ExtResource( 7 ),
-"FaDor": ExtResource( 11 ),
-"FaZur": ExtResource( 12 ),
-"Ign": ExtResource( 3 ),
-"IgnZur": ExtResource( 15 )
-}
+shape = SubResource( 17 )
 
 [node name="DashTimer" type="Timer" parent="."]
 wait_time = 0.2
 one_shot = true
+
+[node name="DashRecover" type="Timer" parent="."]
+wait_time = 3.0
+one_shot = true
 [connection signal="learn_spell" from="." to="GUI/GUI" method="_on_Wizard_learn_spell"]
 [connection signal="learn_spell" from="." to="GUI/GUI/PowerTree" method="_on_Wizard_learn_spell"]
-[connection signal="cast_spell" from="GUI/GUI/PowerTree" to="GUI/GUI" method="_on_PowerTree_cast_spell"]
 [connection signal="gui_input" from="GUI/GUI/Jump" to="." method="_on_Jump_gui_input"]
 [connection signal="gui_input" from="GUI/GUI/Dash" to="." method="_on_Dash_gui_input"]
 [connection signal="analog_force" from="GUI/GUI/Joystick" to="." method="_on_Joystick_analog_force"]
 [connection signal="body_entered" from="EnemyDetection" to="." method="_on_EnemyDetection_body_entered"]
 [connection signal="body_exited" from="EnemyDetection" to="." method="_on_EnemyDetection_body_exited"]
 [connection signal="timeout" from="DashTimer" to="." method="_on_DashTimer_timeout"]
+[connection signal="timeout" from="DashRecover" to="." method="_on_DashRecover_timeout"]

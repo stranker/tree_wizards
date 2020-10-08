@@ -38,6 +38,9 @@ func create_live_timer(time):
 func get_spell_info():
 	return spell_data
 
-func cast(spell_direction : Vector3, pos : Vector3):
-	global_transform.origin = pos
+func cast(current_enemy : Spatial, spell_direction : Vector3, pos : Vector3):
+	call_deferred("translate", pos)
 	pass
+
+func can_cast_spell(_enemy):
+	return true

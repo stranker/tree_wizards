@@ -1,0 +1,35 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://addons/radial_progress/RadialProgressBar.gd" type="Script" id=1]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Control
+
+onready var bar = $RadialProgressBar
+
+func set_max(max_value):
+	bar.set_max(max_value)
+	set_value(max_value)
+
+func set_value(value):
+	bar.set_progress(value)
+"
+
+[node name="DashBar" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = SubResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="RadialProgressBar" type="Control" parent="."]
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+max_value = 4
+radius = 70
+progress = 1
+thickness = 6
+bar_color = Color( 1, 1, 1, 1 )

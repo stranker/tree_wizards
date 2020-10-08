@@ -1,77 +1,82 @@
 extends Control
 
 export var spell_name : String = ""
-export (Array, NodePath) var next_words
-export var learned : bool = false
 export var spell_texture : Texture = null
+export var spell_scene : PackedScene = null
+var spell : Spatial = null
+export var learned : bool = false
+export var initial_button : bool = false
+export (Array, NodePath) var next_spells
 
-enum SpellState {CanClick, Clicked, Reseting, OutMana, Last}
+enum SpellState {CANCLICK, CLICKED, RESETING, OUTMANA, LAST}
 
-export (SpellState) var current_state = SpellState.CanClick
+export (SpellState) var current_state
 
-signal word_pressed(spell_name)
+signal spell_pressed(spell)
 
-var word_parent = null
-var reseting : bool = false
+var spell_parent : Control = null
 
 func _ready():
+	if !initial_button:
+		spell = spell_scene.instance()
+		spell.initialize()
+		visible = false
+	current_state = SpellState.CANCLICK
 	if spell_texture:
 		$Icon.texture = spell_texture
-		$Icon.self_modulate.a = 1
+	
 	pass
 
 func on_click():
-	if current_state == SpellState.CanClick:
-		if spell_name != "":
-			emit_signal("word_pressed", spell_name)
-		activate_next_words()
-		deactivate_parent_words()
-		$Anim.play("Clicked")
-		current_state = SpellState.Clicked
-	pass
-
-func activate_next_words():
-	for word in next_words:
-		if get_node(word).learned:
-			get_node(word).set_active(true, self)
-	pass
-
-func deactivate_parent_words():
-	if !word_parent:
+	if current_state != SpellState.CANCLICK:
 		return
-	for word in word_parent.next_words:
-		if get_node(word) != self:
-			get_node(word).set_active(false, null)
+	activate_next_spells()
+	deactivate_parent_spells()
+	$Anim.play("Clicked")
+	current_state = SpellState.CLICKED
+	if spell:
+		emit_signal("spell_pressed", spell)
+	pass
+
+func activate_next_spells():
+	for spell in next_spells:
+		if get_node(spell).learned:
+			get_node(spell).set_active(true, self)
+	pass
+
+func deactivate_parent_spells():
+	if !spell_parent:
+		return
+	for spell_button in spell_parent.next_spells:
+		var spell = spell_parent.get_node(spell_button)
+		if spell:
+			if spell != self:
+				spell.set_active(false, null)
 	pass
 
 func set_active(value, parent):
 	visible = value
-	word_parent = parent
-	var current_spell_name = ""
-	if word_parent:
-		current_spell_name = word_parent.spell_name + spell_name
-	else:
-		current_spell_name = spell_name
-	var spell_texture_name = "res://Assets/Sprites/Spells/" + current_spell_name.to_lower() + "_icon.png"
-	spell_texture = load(spell_texture_name)
-	$Icon.texture = spell_texture
-	var spell = SpellManager.get_spell(current_spell_name)
+	spell_parent = parent
+	mana_check()
+	pass
+
+func mana_check():
 	if spell:
 		if GameManager.wizard.mana < spell.mana_cost:
-			current_state = SpellState.OutMana
+			current_state = SpellState.OUTMANA
 			$Anim.play("OutMana")
 	pass
 
 func reset():
-	if current_state == SpellState.Reseting:
+	if current_state == SpellState.RESETING:
 		return
-	if spell_name != "":
-		current_state = SpellState.Reseting
+	if !initial_button:
+		current_state = SpellState.RESETING
 		if $Anim.is_playing():
 			$Anim.stop()
 		$Anim.play("Reset",-1,1.5)
 	else:
-		current_state = SpellState.CanClick
+		current_state = SpellState.CANCLICK
 		$Anim.play("CanClick")
 	pass
 
@@ -81,11 +86,10 @@ func learn():
 
 func _on_Anim_animation_finished(anim_name):
 	if anim_name == "Reset":
-		current_state = SpellState.CanClick
-		$Icon.self_modulate.a = 1
+		current_state = SpellState.CANCLICK
 		visible = false
 		$Anim.play("CanClick")
 	pass # Replace with function body.
 
 func can_be_clicked():
-	return current_state == SpellState.CanClick and visible
+	return current_state == SpellState.CANCLICK and visible

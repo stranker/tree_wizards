@@ -1,0 +1,44 @@
+[gd_scene load_steps=8 format=2]
+
+[ext_resource path="res://GUI/SpellWord.tscn" type="PackedScene" id=1]
+[ext_resource path="res://Objects/Spells/Fa.tscn" type="PackedScene" id=2]
+[ext_resource path="res://Objects/Spells/FaZur.tscn" type="PackedScene" id=3]
+[ext_resource path="res://Objects/Spells/FaDor.tscn" type="PackedScene" id=4]
+[ext_resource path="res://Assets/Sprites/Spells/fa_icon.png" type="Texture" id=5]
+[ext_resource path="res://Assets/Sprites/Spells/fador_icon.png" type="Texture" id=6]
+[ext_resource path="res://Assets/Sprites/Spells/fazur_icon.png" type="Texture" id=7]
+
+[node name="IceSpellTree" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Fa" parent="." instance=ExtResource( 1 )]
+spell_name = "Fa"
+spell_texture = ExtResource( 5 )
+spell_scene = ExtResource( 2 )
+learned = true
+next_spells = [ NodePath("../FaZur") ]
+
+[node name="FaZur" parent="." instance=ExtResource( 1 )]
+margin_left = -70.6168
+margin_top = -129.836
+margin_right = 59.3832
+margin_bottom = 0.164627
+spell_name = "FaZur"
+spell_texture = ExtResource( 7 )
+spell_scene = ExtResource( 3 )
+learned = true
+next_spells = [ NodePath("../FaDor") ]
+
+[node name="FaDor" parent="." instance=ExtResource( 1 )]
+margin_left = -155.109
+margin_top = -15.1531
+margin_right = -25.1088
+margin_bottom = 114.847
+spell_name = "FaDor"
+spell_texture = ExtResource( 6 )
+spell_scene = ExtResource( 4 )
+learned = true
