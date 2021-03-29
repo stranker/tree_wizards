@@ -1,0 +1,102 @@
+[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://Assets/Sprites/ItemIcons/icon_05.png" type="Texture" id=2]
+[ext_resource path="res://Assets/Sprites/ItemIcons/icon_09.png" type="Texture" id=3]
+[ext_resource path="res://Assets/Sprites/ItemIcons/icon_08.png" type="Texture" id=4]
+[ext_resource path="res://Assets/Sprites/ItemIcons/icon_04.png" type="Texture" id=5]
+[ext_resource path="res://Assets/Sprites/ItemIcons/icon_07.png" type="Texture" id=6]
+[ext_resource path="res://Assets/Sprites/ItemIcons/icon_06.png" type="Texture" id=7]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Node2D
+
+export var level : int = 0
+var selected : bool = false
+
+var new_pos : Vector2 = Vector2.ZERO
+var last_pos : Vector2 = Vector2.ZERO
+
+var merge_item_list : Array = []
+export (Array, Texture) var textures = []
+
+func _ready():
+	$Sprite.texture = textures[level]
+	last_pos = global_position
+	pass
+
+func _on_Area2D_area_entered(area):
+	if area.is_in_group(\"MergeItem\"):
+		merge_item_list.append(area)
+	pass # Replace with function body.
+
+
+func _on_Area2D_area_exited(area):
+	if area.is_in_group(\"MergeItem\"):
+		merge_item_list.erase(area)
+	pass # Replace with function body.
+
+func _process(delta):
+	if selected:
+		position = get_global_mouse_position()
+	pass
+
+func _on_Area2D_input_event(viewport, event, shape_idx):
+	if event is InputEventScreenTouch:
+		selected = event.is_pressed()
+		if !selected:
+			check_for_merge()
+		else:
+			last_pos = position
+			check_boundaries()
+	pass # Replace with function body.
+
+func check_for_merge():
+	if merge_item_list.empty():
+		last_pos = position
+		check_boundaries()
+		return
+	try_merge_item(merge_item_list[0].get_parent())
+	pass
+
+func try_merge_item(merge_item : Node2D):
+	if merge_item.level == level:
+		merge_item.call_deferred(\"queue_free\")
+		level_up()
+	else:
+		position = last_pos
+		check_boundaries()
+	pass
+
+func level_up():
+	level += 1
+	$Sprite.texture = textures[level]
+	merge_item_list.clear()
+	last_pos = position
+	pass
+
+func check_boundaries():
+	var half_sprite_size : Vector2 = $Sprite.texture.get_size() * 0.5
+	position.x = clamp(position.x, half_sprite_size.x, get_viewport_rect().size.x - half_sprite_size.x)
+	position.y = clamp(position.y, half_sprite_size.y, get_viewport_rect().size.y - half_sprite_size.y)
+	pass
+"
+
+[sub_resource type="CircleShape2D" id=2]
+radius = 23.3971
+
+[node name="MergeItem" type="Node2D"]
+script = SubResource( 1 )
+textures = [ ExtResource( 5 ), ExtResource( 2 ), ExtResource( 7 ), ExtResource( 6 ), ExtResource( 4 ), ExtResource( 3 ) ]
+
+[node name="Sprite" type="Sprite" parent="."]
+texture = ExtResource( 5 )
+
+[node name="Area2D" type="Area2D" parent="." groups=[
+"MergeItem",
+]]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource( 2 )
+[connection signal="area_entered" from="Area2D" to="." method="_on_Area2D_area_entered"]
+[connection signal="area_exited" from="Area2D" to="." method="_on_Area2D_area_exited"]
+[connection signal="input_event" from="Area2D" to="." method="_on_Area2D_input_event"]

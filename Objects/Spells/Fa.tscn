@@ -1,18 +1,15 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=10 format=2]
 
 [ext_resource path="res://Objects/Spells/fa_mesh.vox" type="ArrayMesh" id=1]
-[ext_resource path="res://Objects/Spells/IceCube.tscn" type="PackedScene" id=2]
+[ext_resource path="res://Objects/Spells/Effects/IceEffect.tscn" type="PackedScene" id=3]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends \"res://Objects/Spells/DirectionalSpell.gd\"
 
-export (PackedScene) var ice_scene
-export var freeze_time : float = 3.0
-
 func _on_Area_body_entered(body):
 	if is_enemy(body) and !activated:
 		activated = !activated
-		body.freeze(damage, freeze_time)
+		body.take_spell_damage(spell_damage, spell_effect)
 		call_deferred(\"queue_free\")
 	pass # Replace with function body.
 "
@@ -20,16 +17,34 @@ func _on_Area_body_entered(body):
 [sub_resource type="BoxShape" id=2]
 extents = Vector3( 0.336854, 0.363504, 0.581491 )
 
-[node name="Fa" type="Spatial"]
+[sub_resource type="SpatialMaterial" id=3]
+flags_transparent = true
+flags_unshaded = true
+flags_do_not_receive_shadows = true
+flags_disable_ambient_light = true
+vertex_color_use_as_albedo = true
+
+[sub_resource type="CubeMesh" id=4]
+material = SubResource( 3 )
+size = Vector3( 0.1, 0.1, 0.1 )
+
+[sub_resource type="Curve" id=5]
+_data = [ Vector2( 0, 1 ), 0.0, -0.102053, 0, 0, Vector2( 1, 0 ), -2.6803, 0.0, 0, 0 ]
+
+[sub_resource type="Gradient" id=6]
+colors = PoolColorArray( 1, 1, 1, 0.807843, 0.00392157, 0.639216, 1, 0.670588 )
+
+[sub_resource type="BoxShape" id=7]
+extents = Vector3( 0.301589, 0.248535, 0.465503 )
+
+[node name="Fa" type="KinematicBody"]
+collision_layer = 16
+collision_mask = 2
 script = SubResource( 1 )
 spell_name = "Fa"
-mana_cost = 5
 spell_range = 10.0
-spell_area = 0.5
-spell_type = 0
-rotate_to_dir = true
-speed = 15.0
-ice_scene = ExtResource( 2 )
+spell_speed = 15.0
+spell_effect_scene = ExtResource( 3 )
 
 [node name="Visual" type="Spatial" parent="."]
 
@@ -44,4 +59,19 @@ collision_mask = 2
 [node name="Collision" type="CollisionShape" parent="Visual/Area"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.259185, 0 )
 shape = SubResource( 2 )
+
+[node name="CPUParticles" type="CPUParticles" parent="Visual"]
+speed_scale = 3.0
+local_coords = false
+mesh = SubResource( 4 )
+emission_shape = 3
+emission_points = PoolVector3Array( -0.089906, 0.305938, 0.187185, 0.01121, 0.268959, 0.504445, 0.0819852, 0.295346, 0.433234, -0.0431062, 0.180043, -0.158195, 0.129375, 0.322743, -0.465855, -0.288521, 0.222796, -0.494251, 0.0138123, 0.299676, -0.172506, 0.168607, 0.207002, 0.0167844, -0.0549381, 0.13744, -0.33277, 0.0969012, 0.234664, 0.316047, 0.0194129, 0.334628, 0.161574, -0.0111474, 0.298444, -0.0463189, -0.221803, 0.221077, -0.423642, 0.193315, 0.222934, 0.154373, 0.28493, 0.241096, -0.467873, 0.186462, 0.376011, -0.450802, 0.232872, 0.205268, -0.495817, 0.0578919, 0.304209, -0.183651, 0.017057, 0.145849, -0.0678039, 0.089393, 0.323412, -0.11445, 0.0699063, 0.204686, -0.358584, 0.0656353, 0.276487, 0.336523, -0.0451939, 0.217903, -0.432301, 0.0311426, 0.20781, -0.483401, 0.0575114, 0.203924, -0.425659, -0.00527379, 0.3761, -0.00334251, -0.0257415, 0.0242713, -0.42176, 0.0678513, 0.157261, 0.317597, 0.0175854, 0.338575, -0.46837, 0.0700325, 0.316659, 0.072569, -0.145404, 0.242464, -0.147094, 0.0589107, 0.397898, -0.0770407, 0.113167, 0.100329, -0.400016, 0.0217061, 0.142652, 0.283094, 0.076866, 0.144311, -0.264252, 0.122087, 0.198952, -0.479485, -0.0892351, 0.389084, -0.218365, 0.0916251, 0.448167, -0.49817, -0.0294173, 0.157728, -0.373622, 0.0765806, 0.353139, 0.00743705, -0.0936366, 0.238528, 0.0330734, 0.0785868, 0.249991, 0.427461, -0.121976, 0.13109, -0.328607, -0.0765207, 0.0224853, -0.448115, 0.266685, 0.222249, -0.432283, 0.154357, 0.148817, -0.459295, 0.0633626, 0.270666, -0.224663, 0.0757279, 0.145858, -0.393885, 0.166925, 0.295546, 0.101033, -0.210303, 0.220953, -0.445447, -0.181265, 0.325503, -0.474862, 0.0426206, 0.150581, -0.379295, -0.0840342, 0.2644, 0.199357, 0.0806233, 0.370917, 0.0242547, -0.125917, 0.2118, -0.0970354, 0.0975913, 0.368239, -0.089843, 0.0446349, 0.0346584, -0.438957, 0.0612954, 0.151898, -0.362416, 0.0637722, 0.228881, 0.130783, 0.08385, 0.221129, -0.138417, 0.0402819, 0.24781, -0.448211, 0.0673944, 0.0813995, -0.499097, 0.0556598, 0.253203, -0.275444, -0.122493, 0.317516, -0.499901 )
+gravity = Vector3( 0, -2, 0 )
+scale_amount_random = 1.0
+scale_amount_curve = SubResource( 5 )
+color_ramp = SubResource( 6 )
+
+[node name="CollisionShape" type="CollisionShape" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.247853, 0 )
+shape = SubResource( 7 )
 [connection signal="body_entered" from="Visual/Area" to="." method="_on_Area_body_entered"]

@@ -1,91 +1,63 @@
-[gd_scene load_steps=28 format=2]
+[gd_scene load_steps=16 format=2]
 
-[ext_resource path="res://GUI/SpellTree.tscn" type="PackedScene" id=1]
-[ext_resource path="res://GUI/Joystick.tscn" type="PackedScene" id=2]
-[ext_resource path="res://GUI/BigCircle.png" type="Texture" id=4]
+[ext_resource path="res://GUI/GUI.tscn" type="PackedScene" id=1]
+[ext_resource path="res://Assets/Sprites/ArrowCircle.png" type="Texture" id=3]
 [ext_resource path="res://Objects/Player/wizard.vox" type="ArrayMesh" id=5]
-[ext_resource path="res://Assets/Fonts/Iron Latch.TTF" type="DynamicFontData" id=8]
-[ext_resource path="res://Assets/Fonts/Iron100.tres" type="DynamicFont" id=9]
-[ext_resource path="res://UI/CastViewHelper.tscn" type="PackedScene" id=10]
-[ext_resource path="res://UI/ManaBar.tscn" type="PackedScene" id=13]
-[ext_resource path="res://Objects/Misc/ArrowPointer.tscn" type="PackedScene" id=14]
-[ext_resource path="res://UI/DashBar.tscn" type="PackedScene" id=16]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends KinematicBody
 
-enum PlayerState {IDLE, RUN, JUMP, FALL, DASH, LAST}
+enum PlayerState {IDLE, RUN, FALL, DASH, LAST}
 enum VisualState {NORMAL, LOCK_TO_TARGET, LAST}
+
+export (PlayerState) var player_state = PlayerState.FALL
+export (VisualState) var visual_state = VisualState.NORMAL
 
 export var velocity : Vector3
 export var run_speed : float = 5
 export var dash_speed : float = 20
+export var rotation_speed : float = 15
+export var enemy_rotation_speed : float = 20
+const gravity : int = 200
+export var dash_cooldown : float = 0.5
+onready var spell_position : Position3D = $Visual/SpellPos
+
 var movement_dir : Vector3
 var rotation_dir : Vector2
 var is_moving : bool = false
 var is_dashing : bool = false
-export var rotation_speed : float = 15
-export var enemy_rotation_speed : float = 20
-export var jump_speed : float = 600
-export var gravity : float = 200
-export var jump_cut_height : float = 0.5
-export var max_mana : int = 100
-export var mana_regen : float = 2
-export var max_dash : int = 4
-onready var dash_count : int = max_dash
-export (PlayerState) var player_state = PlayerState.FALL
-export (VisualState) var visual_state = VisualState.NORMAL
+var can_dash : bool = true
 
 var visual_dir : Vector3
 var keyboard_movement : Vector2 = Vector2.ZERO
-var mana : float = 100
 
-export var spell_dir : Vector3
-
-var enemy_list : Array = []
+var spell_dir : Vector3
 
 var new_anim = \"\"
 var anim = \"\"
 
 var pos : Vector3 = Vector3.ZERO
 
-var is_android : bool = true
-
-signal learn_spell(spell_name)
-signal on_mana_change(value)
-
 var current_enemy = null
 
 func _ready():
 	set_physics_process(true)
-	SpellManager.init(self)
-	SpellManager.connect(\"spell_casted\", self, \"on_spell_casted\")
-	$GUI/GUI/ManaBar.set_target(self)
-	GameManager.wizard = self
-	check_android()
-	$GUI/GUI/Dash/DashBar.set_max(max_dash)
+	WizardStatsManager.connect(\"on_level_up\",self, \"_update_stats\")
+	_update_stats()
+	$DashCooldown.wait_time = dash_cooldown
 	pass
 
-func check_android():
-	if OS.get_name() == \"Windows\":
-		is_android = false
-	if !is_android:
-		$GUI/GUI.remove_android_hud()
+func _update_stats():
+	run_speed = WizardStatsManager.base_movement_speed
 	pass
 
 func _state_machine(delta):
 	Debug.set_player_state(player_state)
 	match player_state:
-		PlayerState.IDLE:
-			_idle_state()
-		PlayerState.RUN:
-			_run_state()
-		PlayerState.JUMP:
-			_jump_state(delta)
-		PlayerState.FALL:
-			_fall_state(delta)
-		PlayerState.DASH:
-			_dash_state()
+		PlayerState.IDLE:_idle_state()
+		PlayerState.RUN:_run_state()
+		PlayerState.FALL:_fall_state(delta)
+		PlayerState.DASH:_dash_state()
 	pass
 
 func _idle_state():
@@ -126,22 +98,12 @@ func _dash_state():
 	pass
 
 func dash():
-	if is_dashing:
+	if is_dashing or !can_dash:
 		return
-	if dash_count <= 0:
-		return
-	dash_count -= 1
+	can_dash = false
 	player_state = PlayerState.DASH
-	if $DashTimer.is_stopped():
-		$DashTimer.start()
-	if $DashRecover.is_stopped():
-		$DashRecover.start()
-	$GUI/GUI/Dash/DashBar.set_value(dash_count)
-	pass
-
-func jump():
-	if is_on_floor():
-		velocity.y = jump_speed
+	$DashTimer.start()
+	$DashCooldown.start()
 	pass
 
 func _on_DashTimer_timeout():
@@ -150,6 +112,11 @@ func _on_DashTimer_timeout():
 		player_state = PlayerState.IDLE
 	else:
 		player_state = PlayerState.FALL
+	pass # Replace with function body.
+	
+	
+func _on_DashCooldown_timeout():
+	can_dash = true
 	pass # Replace with function body.
 
 func _movement():
@@ -170,59 +137,41 @@ func is_running():
 func _physics_process(delta):
 	_state_machine(delta)
 	move_and_slide(velocity, Vector3.UP)
-	rotation.y = lerp_angle(rotation.y, rotation_dir.angle(), delta * rotation_speed)
+	rotation.y = _lerp_angle(rotation.y, rotation_dir.angle(), delta * rotation_speed)
 	pass
 
 func apply_gravity(delta):
 	velocity.y -= gravity * delta
 
 func _process(delta):
-	input_check()
+	_input_check()
 	_visual_state(delta)
-	animation_update()
-	mana_update(delta)
+	_animation_update()
 	$Visual/WalkingDust.emitting = is_running()
-	pass
-
-func mana_update(delta):
-	if mana < max_mana:
-		mana += mana_regen * delta
-		if mana > max_mana:
-			mana = max_mana
-	emit_signal(\"on_mana_change\", mana)
 	pass
 
 func _visual_state(delta):
 	$Visual/EnemyCast.cast_to = $MovementCast.cast_to
 	Debug.set_visual_state(visual_state)
 	match visual_state:
-		VisualState.NORMAL:
-			_visual_normal(delta)
-		VisualState.LOCK_TO_TARGET:
-			_visual_lock_to_target(delta)
+		VisualState.NORMAL:_visual_normal(delta)
+		VisualState.LOCK_TO_TARGET:_visual_lock_to_target(delta)
 	pass
 
 func _visual_normal(delta):
-	$Visual.rotation.y = lerp_angle($Visual.rotation.y, visual_dir.y, delta * rotation_speed)
-	get_closest_enemy()
-	if !enemy_list.empty():
-		visual_state = VisualState.LOCK_TO_TARGET
+	$Visual.rotation.y = _lerp_angle($Visual.rotation.y, visual_dir.y, delta * rotation_speed)
 	pass
 
 func _visual_lock_to_target(delta):
-	get_closest_enemy()
-	if current_enemy:
-		lock_to_target(current_enemy)
-		$Visual.rotation.y = lerp_angle($Visual.rotation.y, -rotation.y + Vector2(visual_dir.z,visual_dir.x).angle(), delta * enemy_rotation_speed)
-	if enemy_list.empty():
-		visual_state = VisualState.NORMAL
+	_lock_to_target(current_enemy)
+	$Visual.rotation.y = _lerp_angle($Visual.rotation.y, -rotation.y + Vector2(visual_dir.z,visual_dir.x).angle(), delta * enemy_rotation_speed)
 	pass
 
-func lock_to_target(target):
+func _lock_to_target(target):
 	visual_dir = (target.global_transform.origin - transform.origin).normalized()
 	pass
 
-func animation_update():
+func _animation_update():
 	if is_moving:
 		new_anim = \"Walk\"
 	else:
@@ -232,99 +181,27 @@ func animation_update():
 		$Visual/Anim.play(anim)
 	pass
 
-func get_closest_enemy():
-	if enemy_list.empty():
-		return
-	var close_enemy = null
-	if enemy_list.size() == 1:
-		close_enemy = enemy_list[0]
-	elif enemy_list.size() > 1:
-		var min_distance = distance_to(enemy_list[0])
-		close_enemy = enemy_list[0]
-		for enemy in enemy_list:
-			var distance = distance_to(enemy)
-			if  distance < min_distance:
-				min_distance = distance
-				close_enemy = enemy
-	if close_enemy:
-		if current_enemy:
-			if current_enemy != close_enemy:
-				if current_enemy.has_method(\"set_select\"):
-					current_enemy.set_select(false)
-				current_enemy = close_enemy
-				if current_enemy.has_method(\"set_select\"):
-					current_enemy.set_select(true)
-		else:
-			current_enemy = close_enemy
-			if current_enemy.has_method(\"set_select\"):
-				current_enemy.set_select(true)
-	else:
-		current_enemy = null
-	pass
-
-func distance_to(target : Spatial):
-	return global_transform.origin.distance_to(target.global_transform.origin)
-
 func get_forward():
 	return transform.basis.z
 
-func get_spell_direction():
-	return $Visual.global_transform.basis.z
+func _lerp_angle(from, to, weight):
+	return from + _short_angle_dist(from, to) * weight
 
-func lerp_angle(from, to, weight):
-	return from + short_angle_dist(from, to) * weight
-
-func short_angle_dist(from, to):
+func _short_angle_dist(from, to):
 	var max_angle = PI * 2
 	var difference = fmod(to - from, max_angle)
 	return fmod(2 * difference, max_angle) - difference
 
-func _on_EnemyDetection_body_entered(body):
-	if body.is_in_group(\"Enemy\"):
-		Debug.debug(\"Enemy detected\")
-		if !enemy_list.has(body):
-			Debug.debug(\"Add Enemy\")
-			enemy_list.append(body)
-			if !current_enemy:
-				if body.has_method(\"set_select\"):
-					body.set_select(true)
-			current_enemy = body
-	pass # Replace with function body.
-
-func _on_EnemyDetection_body_exited(body):
-	if body.is_in_group(\"Enemy\"):
-		Debug.debug(\"Enemy detected\")
-		if enemy_list.has(body):
-			body.set_select(false)
-			Debug.debug(\"Remove Enemy\")
-			enemy_list.erase(body)
-		if enemy_list.empty():
-			current_enemy = null
-	pass # Replace with function body.
-
-func _on_Jump_gui_input(event):
-	jump()
-	pass # Replace with function body.
-
-func learn_spell(spell_name):
-	emit_signal(\"learn_spell\", spell_name)
-	pass
-
-func _on_Joystick_analog_force(force):
+func _set_joystick_force(force):
 	is_moving = force != Vector2.ZERO
 	rotation_dir = force if is_moving else rotation_dir
-	pass # Replace with function body.
+	pass
 
-func on_spell_casted(spell):
-	mana -= spell.mana_cost
-	emit_signal(\"on_mana_change\", mana)
-	pass # Replace with function body.
-
-func input_check():
-	if is_android:
+func _input_check():
+	if GameManager.is_android_device:
 		return
 	keyboard_movement = Vector2.ZERO
-	_on_Joystick_analog_force(Vector2.ZERO)
+	_set_joystick_force(Vector2.ZERO)
 	if Input.is_action_pressed(\"ui_left\"):
 		keyboard_movement.x = -1
 	if Input.is_action_pressed(\"ui_right\"):
@@ -333,38 +210,48 @@ func input_check():
 		keyboard_movement.y = 1
 	if Input.is_action_pressed(\"ui_down\"):
 		keyboard_movement.y = -1
-	if Input.is_action_just_pressed(\"ui_select\"):
-		jump()
 	if Input.is_action_just_pressed(\"dash\"):
 		dash()
-	_on_Joystick_analog_force(keyboard_movement)
+	_set_joystick_force(keyboard_movement)
 	pass
 
-func reset_mana():
-	mana = max_mana
-	emit_signal(\"on_mana_change\", mana)
+func get_spell_pos():
+	return spell_position.global_transform.origin
 
-func _on_Dash_gui_input(event):
+func get_spell_direction():
+	return $Visual.global_transform.basis.z
+
+func _on_GUI_on_dash_pressed():
 	dash()
 	pass # Replace with function body.
 
-func get_cast_helper():
-	return $Visual/CastViewHelper
+func _on_GUI_on_joystick_force(force):
+	_set_joystick_force(force)
+	pass # Replace with function body.
 
-func _on_DashRecover_timeout():
-	dash_count += 1
-	dash_count = clamp(dash_count, 0, max_dash)
-	$GUI/GUI/Dash/DashBar.set_value(dash_count)
-	if dash_count < max_dash:
-		$DashRecover.start()
+func _on_EnemyDetection_on_current_enemy(enemy):
+	current_enemy = enemy
+	visual_state = VisualState.LOCK_TO_TARGET if current_enemy else VisualState.NORMAL
 	pass # Replace with function body.
 "
 
-[sub_resource type="Animation" id=2]
+[sub_resource type="SpatialMaterial" id=2]
+flags_transparent = true
+flags_unshaded = true
+flags_do_not_receive_shadows = true
+flags_disable_ambient_light = true
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource( 3 )
+
+[sub_resource type="QuadMesh" id=3]
+material = SubResource( 2 )
+flip_faces = true
+
+[sub_resource type="Animation" id=4]
 length = 0.1
 loop = true
 tracks/0/type = "value"
-tracks/0/path = NodePath("Mesh:rotation_degrees")
+tracks/0/path = NodePath("Skin/Mesh:rotation_degrees")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
@@ -376,11 +263,11 @@ tracks/0/keys = {
 "values": [ Vector3( 0, 90, 0 ) ]
 }
 
-[sub_resource type="Animation" id=3]
+[sub_resource type="Animation" id=5]
 length = 0.6
 loop = true
 tracks/0/type = "value"
-tracks/0/path = NodePath("Mesh:rotation_degrees")
+tracks/0/path = NodePath("Skin/Mesh:rotation_degrees")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
@@ -392,7 +279,7 @@ tracks/0/keys = {
 "values": [ Vector3( 10, 90, 0 ), Vector3( -10, 90, 0 ) ]
 }
 
-[sub_resource type="SpatialMaterial" id=4]
+[sub_resource type="SpatialMaterial" id=6]
 flags_transparent = true
 flags_unshaded = true
 flags_do_not_receive_shadows = true
@@ -400,144 +287,75 @@ flags_disable_ambient_light = true
 vertex_color_use_as_albedo = true
 albedo_color = Color( 1, 1, 1, 0.882353 )
 
-[sub_resource type="CubeMesh" id=5]
-material = SubResource( 4 )
+[sub_resource type="CubeMesh" id=7]
+material = SubResource( 6 )
 size = Vector3( 0.1, 0.1, 0.1 )
 
-[sub_resource type="Curve" id=6]
+[sub_resource type="Curve" id=8]
 _data = [ Vector2( 0, 0.994318 ), 0.0, 0.0, 0, 0, Vector2( 1, 0.0306818 ), -0.342015, 0.0, 0, 0 ]
 
-[sub_resource type="Gradient" id=7]
+[sub_resource type="Gradient" id=9]
 offsets = PoolRealArray( 0, 0.463576, 1 )
 colors = PoolColorArray( 1, 1, 1, 1, 1, 1, 1, 0.827815, 1, 1, 1, 0 )
 
-[sub_resource type="GDScript" id=8]
-script/source = "extends Control
-
-onready var spell_cast_text = get_node(\"SpellCast/SpellCast\")
-onready var spell_cast_anim = get_node(\"SpellCast/SpellCast/Anim\")
-
-func _on_Wizard_learn_spell(spell_name):
-	$SpellLearned.text = \"Word spell learned - \" + spell_name
-	spell_cast_anim.play(\"Learned\")
-	pass # Replace with function body.
-
-func _on_PowerTree_cast_spell(spell_list):
-	spell_cast_text.text = get_spell_name(spell_list)
-	if spell_cast_anim.is_playing():
-		spell_cast_anim.stop()
-	spell_cast_anim.play(\"Casted\")
-	pass # Replace with function body.
-
-func get_spell_name(spell_list : Array):
-	var spell_name : String = \"*\"
-	for spell in spell_list:
-		spell_name += spell + \" \"
-	spell_name[spell_name.length() - 1] = \"*\"
-	return spell_name
-
-func remove_android_hud():
-	$Jump.hide()
-	$Joystick.hide()
-	$Dash.hide()
-	pass
-"
-
-[sub_resource type="DynamicFont" id=9]
-size = 28
-use_filter = true
-font_data = ExtResource( 8 )
-
-[sub_resource type="StyleBoxFlat" id=10]
-bg_color = Color( 0.839216, 0.839216, 0.839216, 1 )
-
-[sub_resource type="StyleBoxFlat" id=11]
-bg_color = Color( 0.211765, 0.211765, 0.211765, 1 )
-
-[sub_resource type="GDScript" id=12]
-script/source = "extends ProgressBar
-
-export var cooldown_time : float = 1
-
-func _ready():
-	SpellManager.connect(\"cast_cooldown\", self, \"on_cast_cooldown\")
-	SpellManager.connect(\"cast_ready\", self, \"on_cast_ready\")
-	value = cooldown_time
-	max_value = cooldown_time
-	pass
-
-func on_cast_cooldown(cd):
-	value = cooldown_time - cd
-	pass # Replace with function body.
-
-func on_cast_ready():
-	value = cooldown_time
-	pass # Replace with function body.
-"
-
-[sub_resource type="Animation" id=13]
-length = 4.0
-tracks/0/type = "value"
-tracks/0/path = NodePath(".:percent_visible")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/keys = {
-"times": PoolRealArray( 0, 1.5 ),
-"transitions": PoolRealArray( 1, 1 ),
-"update": 0,
-"values": [ 0.0, 1.0 ]
-}
-tracks/1/type = "value"
-tracks/1/path = NodePath(".:self_modulate")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/keys = {
-"times": PoolRealArray( 0, 1.1, 2.1, 4 ),
-"transitions": PoolRealArray( 0.5, 1, 0.5, 1 ),
-"update": 0,
-"values": [ Color( 1, 1, 1, 0 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 0 ) ]
-}
-
-[sub_resource type="DynamicFont" id=14]
-size = 26
-use_filter = true
-font_data = ExtResource( 8 )
-
-[sub_resource type="Animation" id=15]
-length = 1.5
-tracks/0/type = "value"
-tracks/0/path = NodePath(".:rect_position")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/keys = {
-"times": PoolRealArray( 0, 0.5 ),
-"transitions": PoolRealArray( 0.5, 1 ),
-"update": 0,
-"values": [ Vector2( 0, 0 ), Vector2( 0, -30 ) ]
-}
-tracks/1/type = "value"
-tracks/1/path = NodePath(".:self_modulate")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/keys = {
-"times": PoolRealArray( 0, 0.2, 1, 1.5 ),
-"transitions": PoolRealArray( 1, 1, 0.5, 1 ),
-"update": 0,
-"values": [ Color( 1, 1, 1, 0 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 0 ) ]
-}
-
-[sub_resource type="SphereShape" id=16]
+[sub_resource type="SphereShape" id=10]
 radius = 0.41
 
-[sub_resource type="SphereShape" id=17]
+[sub_resource type="GDScript" id=11]
+script/source = "extends Area
+
+var enemies_detected : Array = []
+var current_enemy : KinematicBody = null
+
+signal on_current_enemy(enemy)
+
+func _on_EnemyDetection_body_entered(enemy):
+	if enemy.is_in_group(\"Enemy\"):
+		if !enemies_detected.has(enemy):
+			enemies_detected.append(enemy)
+		if !current_enemy:
+			current_enemy = enemy
+			current_enemy.set_select(true)
+			emit_signal(\"on_current_enemy\", current_enemy)
+	pass # Replace with function body.
+
+func _on_EnemyDetection_body_exited(enemy):
+	if enemy.is_in_group(\"Enemy\"):
+		if enemies_detected.has(enemy):
+			enemies_detected.erase(enemy)
+		if enemies_detected.empty():
+			current_enemy.set_select(false)
+			current_enemy = null
+			emit_signal(\"on_current_enemy\", current_enemy)
+	pass # Replace with function body.
+
+func _process(delta):
+	_check_closest_enemy()
+	pass
+
+func distance_to(target : Spatial):
+	return global_transform.origin.distance_to(target.global_transform.origin)
+
+func _check_closest_enemy():
+	if enemies_detected.empty():
+		return
+	var closest_enemy = null
+	var min_distance = distance_to(current_enemy)
+	for enemy in enemies_detected:
+		if enemy != current_enemy:
+			var distance = distance_to(enemy)
+			if  distance < min_distance:
+				min_distance = distance
+				closest_enemy = enemy
+	if current_enemy != closest_enemy and closest_enemy:
+		current_enemy.set_select(false)
+		current_enemy = closest_enemy
+		current_enemy.set_select(true)
+		emit_signal(\"on_current_enemy\", current_enemy)
+	pass
+"
+
+[sub_resource type="SphereShape" id=12]
 radius = 12.0
 
 [node name="Wizard" type="KinematicBody" groups=[
@@ -546,7 +364,6 @@ radius = 12.0
 collision_mask = 14
 script = SubResource( 1 )
 rotation_speed = 10.0
-jump_speed = 10.0
 
 [node name="MovementCast" type="RayCast" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0 )
@@ -558,10 +375,20 @@ __meta__ = {
 
 [node name="Visual" type="Spatial" parent="."]
 
-[node name="Mesh" type="MeshInstance" parent="Visual"]
-transform = Transform( -4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0, 0 )
+[node name="Skin" type="Spatial" parent="Visual"]
+
+[node name="Mesh" type="MeshInstance" parent="Visual/Skin"]
+transform = Transform( -4.37114e-08, 0.173648, 0.984808, 0, 0.984808, -0.173648, -1, -7.5904e-09, -4.30473e-08, 0, 0, 0 )
 mesh = ExtResource( 5 )
 material/0 = null
+
+[node name="Arrow" type="MeshInstance" parent="Visual/Skin"]
+transform = Transform( -2.93257e-07, 1.8, 4.37114e-08, 0, -7.86805e-08, 1, 1.8, 2.93257e-07, 7.12149e-15, 0, 0.0470077, 0.601749 )
+mesh = SubResource( 3 )
+material/0 = null
+__meta__ = {
+"_editor_description_": ""
+}
 
 [node name="EnemyCast" type="RayCast" parent="Visual"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0 )
@@ -573,13 +400,8 @@ __meta__ = {
 
 [node name="Anim" type="AnimationPlayer" parent="Visual"]
 autoplay = "Idle"
-anims/Idle = SubResource( 2 )
-anims/Walk = SubResource( 3 )
-
-[node name="CastViewHelper" parent="Visual" instance=ExtResource( 10 )]
-
-[node name="ArrowPointer" parent="Visual" instance=ExtResource( 14 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.55734 )
+anims/Idle = SubResource( 4 )
+anims/Walk = SubResource( 5 )
 
 [node name="WalkingDust" type="CPUParticles" parent="Visual"]
 transform = Transform( -4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0.12734, -0.720781 )
@@ -590,7 +412,7 @@ lifetime = 2.0
 randomness = 1.0
 lifetime_randomness = 0.5
 local_coords = false
-mesh = SubResource( 5 )
+mesh = SubResource( 7 )
 emission_shape = 3
 emission_points = PoolVector3Array( -0.442967, -0.0507014, 0.14251, -0.286709, 0.0363602, 0.130668, -0.400888, -0.00635691, -0.113312, -0.246584, 0.0153767, 0.149695, -0.318793, 0.035655, 0.0149778, -0.329327, 0.0297147, -0.0862136, -0.42228, 0.0397747, -0.0571296, -0.41801, -0.048882, 0.193152, -0.368727, 0.047398, 0.100737, -0.430744, 0.0190734, 0.140851, -0.424441, 0.0163286, -0.0471706, -0.326575, -0.0256334, -0.158496, -0.431621, -0.0374855, 0.113508, -0.293301, 0.0246388, -0.039595, -0.250512, 0.00346267, 0.158368, -0.295813, 0.0289752, -0.156752 )
 flag_align_y = true
@@ -600,181 +422,38 @@ gravity = Vector3( 0, 0.7, 0 )
 initial_velocity_random = 1.0
 scale_amount = 1.5
 scale_amount_random = 1.0
-scale_amount_curve = SubResource( 6 )
-color_ramp = SubResource( 7 )
+scale_amount_curve = SubResource( 8 )
+color_ramp = SubResource( 9 )
 hue_variation = 0.99
 
-[node name="GUI" type="CanvasLayer" parent="."]
-follow_viewport_enable = true
+[node name="SpellPos" type="Position3D" parent="Visual"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.565898, 0.805125 )
 
-[node name="GUI" type="Control" parent="GUI"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-mouse_filter = 2
-script = SubResource( 8 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="PowerTree" parent="GUI/GUI" instance=ExtResource( 1 )]
-
-[node name="Jump" type="TextureButton" parent="GUI/GUI"]
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = -156.44
-margin_top = -155.85
-margin_right = -12.4404
-margin_bottom = -11.8502
-texture_normal = ExtResource( 4 )
-expand = true
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Label" type="Label" parent="GUI/GUI/Jump"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-custom_fonts/font = SubResource( 9 )
-text = "JUMP"
-align = 1
-valign = 1
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Dash" type="TextureButton" parent="GUI/GUI"]
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = -320.774
-margin_top = -134.567
-margin_right = -196.774
-margin_bottom = -10.5673
-texture_normal = ExtResource( 4 )
-expand = true
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Label" type="Label" parent="GUI/GUI/Dash"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-custom_fonts/font = SubResource( 9 )
-text = "DASH"
-align = 1
-valign = 1
-
-[node name="DashBar" parent="GUI/GUI/Dash" instance=ExtResource( 16 )]
-show_behind_parent = true
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-
-[node name="SpellColdown" type="ProgressBar" parent="GUI/GUI"]
-visible = false
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-margin_left = -39.0
-margin_top = -50.0
-margin_right = 60.0
-margin_bottom = -42.0
-mouse_filter = 2
-custom_styles/fg = SubResource( 10 )
-custom_styles/bg = SubResource( 11 )
-max_value = 2.0
-value = 1.0
-percent_visible = false
-script = SubResource( 12 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="SpellLearned" type="Label" parent="GUI/GUI"]
-self_modulate = Color( 1, 1, 1, 0 )
-anchor_left = 0.5
-anchor_right = 0.5
-margin_left = -585.087
-margin_top = 98.3738
-margin_right = 581.913
-margin_bottom = 169.374
-custom_fonts/font = ExtResource( 9 )
-text = "Word spell learned - Fa"
-align = 1
-percent_visible = 0.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Anim" type="AnimationPlayer" parent="GUI/GUI/SpellLearned"]
-anims/Learned = SubResource( 13 )
-
-[node name="Joystick" parent="GUI/GUI" instance=ExtResource( 2 )]
-margin_left = 121.043
-margin_top = 602.485
-margin_right = 122.043
-margin_bottom = 603.485
-
-[node name="SpellCast" type="Control" parent="GUI/GUI"]
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-margin_left = -94.3276
-margin_top = -33.0565
-margin_right = 123.672
-margin_bottom = 2.94348
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="SpellCast" type="Label" parent="GUI/GUI/SpellCast"]
-self_modulate = Color( 1, 1, 1, 0 )
-anchor_right = 1.0
-anchor_bottom = 1.0
-custom_fonts/font = SubResource( 14 )
-text = "Mur"
-align = 1
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Anim" type="AnimationPlayer" parent="GUI/GUI/SpellCast/SpellCast"]
-anims/Casted = SubResource( 15 )
-
-[node name="ManaBar" parent="GUI/GUI" instance=ExtResource( 13 )]
-margin_left = 15.0
-margin_top = 12.0
-margin_right = -962.0
-margin_bottom = -667.0
+[node name="GUI" parent="." instance=ExtResource( 1 )]
 
 [node name="CapsuleCollider" type="CollisionShape" parent="."]
 transform = Transform( 1, 0, 0, 0, -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, 0.4, 0 )
-shape = SubResource( 16 )
+shape = SubResource( 10 )
 
 [node name="EnemyDetection" type="Area" parent="."]
+collision_layer = 64
+collision_mask = 2
+script = SubResource( 11 )
 
 [node name="CollisionShape" type="CollisionShape" parent="EnemyDetection"]
-shape = SubResource( 17 )
+shape = SubResource( 12 )
 
 [node name="DashTimer" type="Timer" parent="."]
 wait_time = 0.2
 one_shot = true
 
-[node name="DashRecover" type="Timer" parent="."]
-wait_time = 3.0
+[node name="DashCooldown" type="Timer" parent="."]
+wait_time = 0.5
 one_shot = true
-[connection signal="learn_spell" from="." to="GUI/GUI" method="_on_Wizard_learn_spell"]
-[connection signal="learn_spell" from="." to="GUI/GUI/PowerTree" method="_on_Wizard_learn_spell"]
-[connection signal="gui_input" from="GUI/GUI/Jump" to="." method="_on_Jump_gui_input"]
-[connection signal="gui_input" from="GUI/GUI/Dash" to="." method="_on_Dash_gui_input"]
-[connection signal="analog_force" from="GUI/GUI/Joystick" to="." method="_on_Joystick_analog_force"]
-[connection signal="body_entered" from="EnemyDetection" to="." method="_on_EnemyDetection_body_entered"]
-[connection signal="body_exited" from="EnemyDetection" to="." method="_on_EnemyDetection_body_exited"]
+[connection signal="on_dash_pressed" from="GUI" to="." method="_on_GUI_on_dash_pressed"]
+[connection signal="on_joystick_force" from="GUI" to="." method="_on_GUI_on_joystick_force"]
+[connection signal="body_entered" from="EnemyDetection" to="EnemyDetection" method="_on_EnemyDetection_body_entered"]
+[connection signal="body_exited" from="EnemyDetection" to="EnemyDetection" method="_on_EnemyDetection_body_exited"]
+[connection signal="on_current_enemy" from="EnemyDetection" to="." method="_on_EnemyDetection_on_current_enemy"]
 [connection signal="timeout" from="DashTimer" to="." method="_on_DashTimer_timeout"]
-[connection signal="timeout" from="DashRecover" to="." method="_on_DashRecover_timeout"]
+[connection signal="timeout" from="DashCooldown" to="." method="_on_DashCooldown_timeout"]

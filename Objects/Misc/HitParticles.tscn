@@ -1,0 +1,47 @@
+[gd_scene load_steps=5 format=2]
+
+[sub_resource type="SpatialMaterial" id=1]
+flags_unshaded = true
+
+[sub_resource type="SphereMesh" id=2]
+radius = 0.1
+height = 0.2
+
+[sub_resource type="Curve" id=3]
+max_value = 2.0
+_data = [ Vector2( 0, 1.58182 ), 0.0, -5.35273, 0, 0, Vector2( 1, 0.0272727 ), 0.158677, 0.0, 0, 0 ]
+
+[sub_resource type="GDScript" id=4]
+script/source = "extends CPUParticles
+
+func init(target : Spatial):
+	translate(target.global_transform.origin)
+	emitting = true
+	direction = (GameManager.wizard.global_transform.origin - target.global_transform.origin).normalized()
+	$Timer.start()
+	pass
+
+func _on_Timer_timeout():
+	call_deferred(\"queue_free\")
+	pass # Replace with function body.
+"
+
+[node name="HitParticles" type="CPUParticles"]
+material_override = SubResource( 1 )
+emitting = false
+amount = 12
+lifetime = 0.4
+one_shot = true
+explosiveness = 0.9
+mesh = SubResource( 2 )
+emission_shape = 1
+emission_sphere_radius = 0.5
+gravity = Vector3( 0, 0, 0 )
+initial_velocity = 20.0
+initial_velocity_random = 0.5
+angle = 360.0
+scale_amount_curve = SubResource( 3 )
+script = SubResource( 4 )
+
+[node name="Timer" type="Timer" parent="."]
+[connection signal="timeout" from="Timer" to="." method="_on_Timer_timeout"]

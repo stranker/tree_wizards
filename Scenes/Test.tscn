@@ -3,42 +3,12 @@
 [ext_resource path="res://Objects/Player/Wizard.tscn" type="PackedScene" id=1]
 [ext_resource path="res://Sky.jpg" type="Texture" id=3]
 [ext_resource path="res://Utility/MainCamera.tscn" type="PackedScene" id=4]
-[ext_resource path="res://Objects/Interactuable/SpellPapyrus.tscn" type="PackedScene" id=5]
+[ext_resource path="res://Objects/Interactable/SpellPapyrus.tscn" type="PackedScene" id=5]
 [ext_resource path="res://Assets/TileSet/Forest.tscn" type="PackedScene" id=6]
 [ext_resource path="res://Assets/Fonts/Iron Latch.TTF" type="DynamicFontData" id=8]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends Spatial
-
-export (PackedScene) var enemy_scene = null
-
-func spawn_enemy():
-	var enemy = enemy_scene.instance()
-	add_child(enemy)
-	enemy.transform.origin = $EnemyPos.global_transform.origin
-	Debug.debug(\"Enemy spawned\")
-	pass
-
-func _on_ResetPos_button_down():
-	$Wizard.transform.origin = $ResetPos.transform.origin
-	pass # Replace with function body.
-
-
-func _on_ResetScene_button_down():
-	get_tree().reload_current_scene()
-	pass # Replace with function body.
-
-
-func _on_FakeShadows_button_down():
-	var fake_shadows = get_tree().get_nodes_in_group(\"FakeShadow\")
-	for shadow in fake_shadows:
-		shadow.visible = !shadow.visible
-	pass # Replace with function body.
-
-
-func _on_ResetMana_button_down():
-	$Wizard.reset_mana()
-	pass # Replace with function body.
 "
 
 [sub_resource type="GDScript" id=2]
@@ -52,6 +22,10 @@ func _ready():
 
 func set_debug(info : String):
 	$DebugPanel/DebugInfo.add_text(info + \"\\n\")
+
+func set_debug_var(info : String, _var : String):
+	$DebugPanel/DebugInfo.add_text(info + \":\" + _var + \"\\n\")
+	pass
 
 func _on_ClearButton_button_down():
 	$DebugPanel/DebugInfo.clear()
@@ -90,8 +64,8 @@ panorama = ExtResource( 3 )
 [sub_resource type="Environment" id=5]
 background_mode = 1
 background_sky = SubResource( 4 )
-background_color = Color( 0.278431, 0.698039, 0.823529, 1 )
-ambient_light_color = Color( 0.670588, 0.576471, 0.368627, 1 )
+background_color = Color( 0.129412, 0.580392, 0.756863, 1 )
+ambient_light_color = Color( 0.972549, 0.878431, 0.368627, 1 )
 fog_color = Color( 0.898039, 0.94902, 1, 1 )
 fog_sun_color = Color( 0.945098, 0.854902, 0.431373, 1 )
 fog_sun_amount = 0.44
@@ -105,9 +79,9 @@ adjustment_enabled = true
 script = SubResource( 1 )
 
 [node name="MainCamera" parent="." instance=ExtResource( 4 )]
-transform = Transform( -1.62921e-07, 0.642788, -0.766044, 0, 0.766044, 0.642788, 1, 1.04724e-07, -1.24805e-07, -18, 15, 0 )
+transform = Transform( -1.62921e-07, 0.819152, -0.573576, 0, 0.573576, 0.819152, 1, 1.33457e-07, -9.34475e-08, -32.238, 16, 24.315 )
 keep_aspect = 1
-custom_pos = Vector3( -10, 10, 0 )
+custom_pos = Vector3( -10, 16, 0 )
 smooth_speed = 0.1
 target_path = NodePath("../Wizard")
 
@@ -115,42 +89,10 @@ target_path = NodePath("../Wizard")
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.80975, 0 )
 
 [node name="Wizard" parent="." instance=ExtResource( 1 )]
-transform = Transform( 0.124606, 0, -0.992206, 0, 1, 0, 0.992206, 0, 0.124606, 1.58201, 3.51457, 29.8123 )
-jump_speed = 32.0
-gravity = 180.0
+transform = Transform( 0.124606, 0, -0.992206, 0, 1, 0, 0.992206, 0, 0.124606, -22.5546, 1.38088, 23.2926 )
 
 [node name="GUI" type="CanvasLayer" parent="."]
-layer = 2
-
-[node name="ResetScene" type="Button" parent="GUI"]
-visible = false
-margin_right = 138.0
-margin_bottom = 55.0
-text = "RESET SCENE"
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="ResetPos" type="Button" parent="GUI"]
-visible = false
-margin_left = 157.159
-margin_top = 0.732165
-margin_right = 299.159
-margin_bottom = 55.7321
-text = "RESET POS"
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="ResetMana" type="Button" parent="GUI"]
-margin_left = 735.339
-margin_top = 606.689
-margin_right = 855.339
-margin_bottom = 713.689
-text = "RESET MANA"
-__meta__ = {
-"_edit_use_anchors_": false
-}
+layer = 25
 
 [node name="Debug" type="Control" parent="GUI"]
 anchor_right = 1.0
@@ -230,7 +172,7 @@ __meta__ = {
 }
 
 [node name="SpellPapyrus" parent="." instance=ExtResource( 5 )]
-transform = Transform( 0.274194, 0, -0.961674, 0, 1, 0, 0.961674, 0, 0.274194, -10.9595, 1.6705, 11.2826 )
+transform = Transform( 0.881303, 0, 0.472551, 0, 1, 0, -0.472551, 0, 0.881303, -9.00792, 1.39144, 28.2778 )
 speed_rotation = 2.0
 spell_learn = "Fa"
 
@@ -240,19 +182,14 @@ environment = SubResource( 5 )
 [node name="Forest" parent="." groups=[
 "Map",
 ] instance=ExtResource( 6 )]
-transform = Transform( 0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 0, 0, 0 )
 
 [node name="DirectionalLight" type="DirectionalLight" parent="."]
 transform = Transform( 0.909376, 0.379865, -0.169524, 0.0271835, 0.352395, 0.935457, 0.415087, -0.85529, 0.310133, -10.0705, 13.2299, 6.89412 )
-light_color = Color( 0.713726, 0.494118, 0.266667, 1 )
-light_energy = 0.7
+light_color = Color( 0.317647, 0.309804, 0.266667, 1 )
 light_specular = 0.0
 shadow_enabled = true
-shadow_color = Color( 0.372549, 0.372549, 0.372549, 1 )
+shadow_color = Color( 0.211765, 0.211765, 0.211765, 1 )
 directional_shadow_mode = 0
 directional_shadow_depth_range = 1
-[connection signal="button_down" from="GUI/ResetScene" to="." method="_on_ResetScene_button_down"]
-[connection signal="button_down" from="GUI/ResetPos" to="." method="_on_ResetPos_button_down"]
-[connection signal="button_down" from="GUI/ResetMana" to="." method="_on_ResetMana_button_down"]
 [connection signal="button_down" from="GUI/Debug/DebugPanel/ClearButton" to="GUI/Debug" method="_on_ClearButton_button_down"]
 [connection signal="button_down" from="GUI/Debug/ConsoleButton" to="GUI/Debug" method="_on_ConsoleButton_button_down"]

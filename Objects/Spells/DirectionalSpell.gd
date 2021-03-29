@@ -1,44 +1,32 @@
 extends "res://Objects/Spells/Spell.gd"
 
-export var live_time : float = 4
-export var rotate_to_dir : bool = false
-export var speed : float = 3
-
 var velocity : Vector3
 var dir : Vector3
 
 var accumulated_pos : Vector3 = Vector3.ZERO
 
-func initialize():
-	.initialize()
-	spell_type = SpellManager.SpellType.Directional
-	spell_data["spell_type"] = spell_type
-	pass
-
 func _ready():
-	create_live_timer(live_time)
+	if spell_effect_scene:
+		spell_effect = spell_effect_scene.instance()
 	pass
 
-func _process(delta):
-	global_transform.origin += velocity * delta
+func _physics_process(delta):
+	move_and_slide(velocity)
 	accumulated_pos += velocity * delta
-	check_position()
-	pass
-
-func check_position():
 	if accumulated_pos.length() > spell_range:
 		call_deferred("queue_free")
 	pass
 
-func _set_spell_dir(direction : Vector3):
+func _set_spell_data(pos : Vector3, direction : Vector3):
+	translate(pos)
 	dir = direction
-	velocity = dir * speed
+	velocity = dir * spell_speed
 	var visual = get_node("Visual")
 	if visual:
 		visual.rotation.y = Vector2(dir.z, dir.x).angle()
 	pass
 
-func cast(current_enemy, direction, pos):
-	.cast(current_enemy, direction, pos)
-	_set_spell_dir(direction)
+func cast(wizard, pos, direction):
+	.cast(wizard, pos, direction)
+	_set_spell_data(pos, direction)
 	pass

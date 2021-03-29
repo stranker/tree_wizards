@@ -16,10 +16,14 @@ export var screen_touched : bool = false
 export var screen_drag : bool = false
 var can_cast : bool = true
 
+onready var initial_button = $Anchor/Initial
+onready var spell_particles = $SpellParticles
+onready var spell_effect_particles = $SpellParticles/EffectParticles
+
 var current_pointer = -1
 
-signal on_cast_spell
-signal on_spell(spell)
+signal on_cast_spell()
+signal on_spell(spell_scene)
 
 func _ready():
 	connect(\"on_cast_spell\", SpellManager, \"on_cast_spell\")
@@ -63,9 +67,9 @@ func on_touch_screen(event : InputEventScreenTouch):
 	screen_touched = event.pressed
 	if screen_touched:
 		if !casting:
-			if $Anchor/Initial.get_global_rect().has_point(event.position):
+			if initial_button.get_global_rect().has_point(event.position):
 				initial_cast()
-				$SpellParticles.global_position = event.position
+				spell_particles.global_position = event.position
 	else:
 		screen_drag = false
 		current_pointer = -1
@@ -76,18 +80,17 @@ func on_touch_screen(event : InputEventScreenTouch):
 
 func initial_cast():
 	casting = true
-	$Anchor/Initial.on_click()
-	$SpellParticles.emitting = true
-	$SpellParticles/EffectParticles.emitting = true
+	initial_button.on_click()
+	set_spell_particles_emitting(true)
 	pass
 
 func on_drag_screen(event : InputEventScreenDrag):
 	if screen_touched:
 		if !casting:
-			if $Anchor/Initial.get_global_rect().has_point(event.position):
+			if initial_button.get_global_rect().has_point(event.position):
 				initial_cast()
 		screen_drag = true
-		$SpellParticles.global_position = event.position
+		spell_particles.global_position = event.position
 		check_spell_rect(event.position)
 	pass
 
@@ -100,29 +103,26 @@ func check_spell_rect(ev_position):
 				spell_activated = true
 	pass
 
-func on_spell_pressed(spell):
-	emit_signal(\"on_spell\", spell)
+func on_spell_pressed(spell_scene):
+	emit_signal(\"on_spell\", spell_scene)
 	pass
 
 func cast_spell():
 	emit_signal(\"on_cast_spell\")
 	casting = false
 	screen_drag = false
-	$SpellParticles.emitting = false
-	$SpellParticles/EffectParticles.emitting = false
-	reset_words()
+	set_spell_particles_emitting(false)
+	reset_buttons()
 	pass
 
-func reset_words():
+func set_spell_particles_emitting(value : bool):
+	spell_particles.emitting = value
+	spell_effect_particles.emitting = value
+	pass
+
+func reset_buttons():
 	for spell_button in spell_buttons:
 		spell_button.reset()
-	pass
-
-func _on_Wizard_learn_spell(spell_name : String):
-	for spell_button in spell_buttons:
-		if spell_button.spell_name.to_lower() == spell_name.to_lower():
-			spell_button.learn()
-			return
 	pass
 
 func _on_SpellManager_cast_ready():
@@ -173,21 +173,20 @@ __meta__ = {
 [node name="Initial" parent="Anchor" instance=ExtResource( 1 )]
 margin_right = 133.0
 margin_bottom = 133.0
-learned = true
 initial_button = true
-next_spells = [ NodePath("../FireSpellTree/Ign"), NodePath("../IceSpellTree/Fa") ]
 
-[node name="FireSpellTree" parent="Anchor" instance=ExtResource( 2 )]
-margin_left = -107.029
-margin_top = -90.3798
-margin_right = -107.029
-margin_bottom = -90.3798
+[node name="FireSpellTree" parent="Anchor/Initial" instance=ExtResource( 2 )]
+margin_left = -109.776
+margin_top = -100.01
+margin_right = -109.776
+margin_bottom = -100.01
 
-[node name="IceSpellTree" parent="Anchor" instance=ExtResource( 4 )]
-margin_left = 54.7035
-margin_top = -128.434
-margin_right = 54.7035
-margin_bottom = -128.434
+[node name="IceSpellTree" parent="Anchor/Initial" instance=ExtResource( 4 )]
+visible = false
+margin_left = -112.328
+margin_top = -103.321
+margin_right = -112.328
+margin_bottom = -103.321
 
 [node name="SpellParticles" type="CPUParticles2D" parent="."]
 position = Vector2( 1338.59, 613.437 )
@@ -231,7 +230,3 @@ scale_amount = 0.12
 scale_amount_random = 0.1
 scale_amount_curve = SubResource( 4 )
 color_ramp = SubResource( 5 )
-
-[editable path="Anchor/FireSpellTree"]
-
-[editable path="Anchor/IceSpellTree"]

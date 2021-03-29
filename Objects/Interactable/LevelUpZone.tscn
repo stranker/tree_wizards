@@ -1,0 +1,120 @@
+[gd_scene load_steps=7 format=2]
+
+[ext_resource path="res://Objects/Interactable/InteractableZone.tscn" type="PackedScene" id=1]
+[ext_resource path="res://Assets/Fonts/Iron100.tres" type="DynamicFont" id=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends \"res://Objects/Interactable/InteractablePlace.gd\"
+"
+
+[sub_resource type="CylinderMesh" id=2]
+height = 0.2
+
+[sub_resource type="SpatialMaterial" id=3]
+vertex_color_use_as_albedo = true
+albedo_color = Color( 0.470588, 0.690196, 0.94902, 1 )
+
+[sub_resource type="GDScript" id=4]
+script/source = "extends \"res://Objects/Interactable/InteractablePlaceUI.gd\"
+
+onready var ability_desc = $Control/Panel/Desc
+
+signal on_level_up()
+
+func _ready():
+	._ready()
+	connect(\"on_level_up\", WizardStatsManager, \"_on_level_up\")
+	pass
+
+func _on_Button_button_down():
+	_toggle_visibility()
+	pass # Replace with function body.
+
+func _on_LevelUpArea_show_ui():
+	_toggle_visibility()
+	pass # Replace with function body.
+
+func _on_LevelUp_button_down():
+	emit_signal(\"on_level_up\")
+	pass # Replace with function body.
+"
+
+[node name="LevelUpArea" type="Spatial"]
+script = SubResource( 1 )
+
+[node name="Visual" type="Spatial" parent="."]
+
+[node name="MeshInstance" type="MeshInstance" parent="Visual"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.091296, 0 )
+mesh = SubResource( 2 )
+material/0 = SubResource( 3 )
+
+[node name="InteractableZone" parent="." instance=ExtResource( 1 )]
+target_zone_path = NodePath("..")
+
+[node name="UI" type="CanvasLayer" parent="."]
+layer = 2
+script = SubResource( 4 )
+main_panel_path = NodePath("Control")
+
+[node name="Control" type="Control" parent="UI"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Panel" type="Panel" parent="UI/Control"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -628.0
+margin_top = -350.5
+margin_right = 628.0
+margin_bottom = 350.5
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Button" type="Button" parent="UI/Control/Panel"]
+margin_right = 39.0
+margin_bottom = 30.0
+text = "X"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="LevelUp" type="Button" parent="UI/Control/Panel"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -80.5
+margin_top = -66.5
+margin_right = 80.5
+margin_bottom = 66.5
+text = "Level up"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Desc" type="Label" parent="UI/Control/Panel"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -380.0
+margin_top = -254.5
+margin_right = 394.0
+margin_bottom = -79.5
+custom_fonts/font = ExtResource( 2 )
+align = 1
+valign = 1
+autowrap = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+[connection signal="show_ui" from="." to="UI" method="_on_LevelUpArea_show_ui"]
+[connection signal="button_down" from="UI/Control/Panel/Button" to="UI" method="_on_Button_button_down"]
+[connection signal="button_down" from="UI/Control/Panel/LevelUp" to="UI" method="_on_LevelUp_button_down"]

@@ -1,0 +1,236 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://GUI/MergeItem.tscn" type="PackedScene" id=1]
+[ext_resource path="res://UI/ui_test.png" type="Texture" id=2]
+[ext_resource path="res://UI/normal_heart_ui.png" type="Texture" id=3]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Control
+
+var merge_item_list : Array = []
+var current_item : Control = null
+var item_to_merge : Control = null
+var item_equipped : Control = null
+
+onready var items : Control = $Items/Container
+
+func _ready():
+	merge_item_list = items.get_children()
+	for merge_item in merge_item_list:
+		merge_item.connect(\"on_end_selection\", self, \"on_merge_item_end_selection\")
+		merge_item.connect(\"on_start_selection\", self, \"on_merge_item_start_selection\")
+	pass
+
+func _process(delta):
+	if !current_item:
+		return
+	var item_found : bool = false
+	for merge_item in merge_item_list:
+		if item_found:
+			return
+		if current_item and merge_item != current_item:
+			if merge_item.get_global_rect().has_point(get_global_mouse_position()):
+				item_to_merge = merge_item
+				item_found = true
+	item_to_merge = null
+	pass
+
+func equip_item(current_item : Control):
+	item_equipped = current_item
+	$ItemEquipped/Image.texture = item_equipped.get_texture()
+	pass
+
+func on_merge_item_end_selection( item : Control ):
+	check_boundaries(item)
+	if !item_to_merge:
+		if $ItemEquipped.get_global_rect().has_point(get_global_mouse_position()):
+			equip_item(current_item)
+		return
+	try_merge(item, item_to_merge)
+	set_process(false)
+	current_item = null
+	item_to_merge = null
+	pass
+
+func on_merge_item_start_selection(item : Control):
+	current_item = item
+	set_process(true)
+	pass
+
+func try_merge(item1 : Control, item2 : Control):
+	if item1.get_level() == item2.get_level():
+		item1.upgrade()
+		merge_item_list.erase(item2)
+		item2.delete()
+	else:
+		item1.swap_pos(item2)
+	pass
+
+func check_boundaries(item : Control):
+	item.rect_position.x = clamp(item.rect_position.x, 0, items.rect_size.x - item.rect_size.x)
+	item.rect_position.y = clamp(item.rect_position.y, 0, items.rect_size.y - item.rect_size.y)
+	pass
+"
+
+[node name="Control" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = SubResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="BG" type="NinePatchRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource( 2 )
+region_rect = Rect2( 38.5946, 699.107, 815.623, 494.562 )
+patch_margin_left = 137
+patch_margin_top = 286
+patch_margin_right = 172
+patch_margin_bottom = 426
+
+[node name="ItemEquipped" type="NinePatchRect" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = 28.4976
+margin_top = -54.7803
+margin_right = 244.498
+margin_bottom = 161.22
+texture = ExtResource( 2 )
+region_rect = Rect2( 898.396, 862.255, 813.209, 507.13 )
+patch_margin_left = 79
+patch_margin_top = 63
+patch_margin_right = 87
+patch_margin_bottom = 82
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Image" type="TextureRect" parent="ItemEquipped"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 10.0
+margin_top = 10.0
+margin_right = -10.0
+margin_bottom = -10.0
+texture = ExtResource( 3 )
+expand = true
+stretch_mode = 6
+
+[node name="Items" type="NinePatchRect" parent="."]
+anchor_top = 0.5
+anchor_bottom = 0.5
+margin_left = 78.4877
+margin_top = -250.818
+margin_right = 575.488
+margin_bottom = 279.182
+texture = ExtResource( 2 )
+region_rect = Rect2( 890.801, 708.6, 818.873, 656.68 )
+patch_margin_top = 106
+patch_margin_bottom = 63
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Container" type="Control" parent="Items"]
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -234.5
+margin_top = -409.0
+margin_right = 238.5
+margin_bottom = -13.0
+
+[node name="MergeItem" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 38.153
+margin_top = -0.0812988
+margin_right = 134.153
+margin_bottom = 95.9187
+
+[node name="MergeItem2" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 138.153
+margin_top = -0.0812988
+margin_right = 234.153
+margin_bottom = 95.9187
+
+[node name="MergeItem3" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 238.153
+margin_top = -0.0812988
+margin_right = 334.153
+margin_bottom = 95.9187
+
+[node name="MergeItem4" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 338.153
+margin_top = -0.0812988
+margin_right = 434.153
+margin_bottom = 95.9187
+
+[node name="MergeItem5" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 38.153
+margin_top = 99.9187
+margin_right = 134.153
+margin_bottom = 195.919
+
+[node name="MergeItem6" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 138.153
+margin_top = 99.9187
+margin_right = 234.153
+margin_bottom = 195.919
+
+[node name="MergeItem7" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 238.153
+margin_top = 99.9187
+margin_right = 334.153
+margin_bottom = 195.919
+
+[node name="MergeItem8" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 338.153
+margin_top = 99.9187
+margin_right = 434.153
+margin_bottom = 195.919
+
+[node name="MergeItem9" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 38.153
+margin_top = 199.919
+margin_right = 134.153
+margin_bottom = 295.919
+
+[node name="MergeItem10" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 138.153
+margin_top = 199.919
+margin_right = 234.153
+margin_bottom = 295.919
+
+[node name="MergeItem11" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 238.153
+margin_top = 199.919
+margin_right = 334.153
+margin_bottom = 295.919
+
+[node name="MergeItem12" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 338.153
+margin_top = 199.919
+margin_right = 434.153
+margin_bottom = 295.919
+
+[node name="MergeItem13" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 38.153
+margin_top = 299.919
+margin_right = 134.153
+margin_bottom = 395.919
+
+[node name="MergeItem14" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 138.153
+margin_top = 299.919
+margin_right = 234.153
+margin_bottom = 395.919
+
+[node name="MergeItem15" parent="Items/Container" instance=ExtResource( 1 )]
+margin_left = 238.153
+margin_top = 299.919
+margin_right = 334.153
+margin_bottom = 395.919

@@ -1,0 +1,109 @@
+[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://Objects/Interactable/InteractableZone.tscn" type="PackedScene" id=1]
+[ext_resource path="res://Objects/Interactable/owl.vox" type="ArrayMesh" id=2]
+[ext_resource path="res://Objects/Interactable/owl_stand.vox" type="ArrayMesh" id=3]
+[ext_resource path="res://Objects/Misc/QuestMark.tscn" type="PackedScene" id=4]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends \"res://Objects/Interactable/InteractablePlace.gd\"
+
+"
+
+[sub_resource type="BoxShape" id=2]
+extents = Vector3( 0.2711, 0.314693, 1 )
+
+[sub_resource type="Animation" id=3]
+resource_name = "idle"
+length = 5.0
+loop = true
+tracks/0/type = "value"
+tracks/0/path = NodePath("owl:rotation_degrees")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 1.5, 1.8, 2, 2.3, 5 ),
+"transitions": PoolRealArray( 1, 1, 1, 1, 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ), Vector3( 0, 0, 7.837 ), Vector3( 0, 0, -5.448 ), Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ) ]
+}
+
+[sub_resource type="GDScript" id=4]
+script/source = "extends \"res://Objects/Interactable/InteractablePlaceUI.gd\"
+
+func _on_Button_button_down():
+	_toggle_visibility()
+	pass # Replace with function body.
+
+
+func _on_QuestOwl_show_ui():
+	_toggle_visibility()
+	pass # Replace with function body.
+"
+
+[node name="QuestOwl" type="Spatial"]
+script = SubResource( 1 )
+
+[node name="StaticBody" type="StaticBody" parent="."]
+
+[node name="CollisionShape" type="CollisionShape" parent="StaticBody"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.312651, 0 )
+shape = SubResource( 2 )
+
+[node name="Visual" type="Spatial" parent="."]
+
+[node name="owl_stand" type="MeshInstance" parent="Visual"]
+transform = Transform( 0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 0, 0, 0 )
+mesh = ExtResource( 3 )
+material/0 = null
+
+[node name="owl" type="MeshInstance" parent="Visual"]
+transform = Transform( 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0.9, 0.0941783 )
+mesh = ExtResource( 2 )
+material/0 = null
+
+[node name="Anim" type="AnimationPlayer" parent="Visual"]
+autoplay = "idle"
+anims/idle = SubResource( 3 )
+
+[node name="QuestMark" parent="Visual" instance=ExtResource( 4 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.11461, 0 )
+visible = false
+
+[node name="InteractableDetectionZone" parent="." instance=ExtResource( 1 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.18727 )
+target_zone_path = NodePath("..")
+
+[node name="UI" type="CanvasLayer" parent="."]
+script = SubResource( 4 )
+main_panel_path = NodePath("Control")
+
+[node name="Control" type="Control" parent="UI"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Panel" type="Panel" parent="UI/Control"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -629.5
+margin_top = -347.0
+margin_right = 629.5
+margin_bottom = 347.0
+
+[node name="Button" type="Button" parent="UI/Control/Panel"]
+margin_right = 52.0
+margin_bottom = 40.0
+text = "X"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+[connection signal="show_ui" from="." to="UI" method="_on_QuestOwl_show_ui"]
+[connection signal="button_down" from="UI/Control/Panel/Button" to="UI" method="_on_Button_button_down"]

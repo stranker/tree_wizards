@@ -23,9 +23,14 @@ config/icon="res://icon.png"
 
 Debug="*res://Managers/Debug.gd"
 GameManager="*res://Managers/GameManager.gd"
-CameraSystem="*res://Managers/CameraSystem.gd"
+EnemyManager="*res://Managers/EnemyManager.gd"
+ItemManager="*res://Managers/ItemManager.gd"
+WizardStatsManager="*res://Managers/WizardStatsManager.gd"
 SpellManager="*res://Managers/SpellManager.gd"
+QuestManager="*res://Managers/QuestManager.gd"
+CameraSystem="*res://Managers/CameraSystem.gd"
 MultiTouch="*res://MultiTouch.gd"
+UiManager="*res://Managers/UIManager.gd"
 
 [debug]
 
@@ -101,10 +106,11 @@ pointing/emulate_touch_from_mouse=true
 3d_physics/layer_3="Items"
 3d_physics/layer_4="Tilemap"
 3d_physics/layer_5="Spell"
+3d_physics/layer_6="Interactable"
+3d_physics/layer_7="EnemyDetection"
 
 [physics]
 
-3d/physics_engine="GodotPhysics"
 3d/smooth_trimesh_collision=true
 
 [rendering]

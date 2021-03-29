@@ -6,10 +6,15 @@ func set_panel(panel):
 	debug_panel = panel
 
 func debug(info):
-	if debug_panel == null:
+	if !debug_panel:
 		return
-	var str_info = str(info)
-	debug_panel.set_debug(str_info)
+	debug_panel.set_debug(str(info))
+	pass
+
+func debug_var(info, _var):
+	if !debug_panel:
+		return
+	debug_panel.set_debug_var(str(info), str(_var))
 	pass
 
 func set_player_state(state):

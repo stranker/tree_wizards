@@ -1,0 +1,546 @@
+[gd_scene load_steps=19 format=2]
+
+[ext_resource path="res://Assets/Fonts/Iron Latch.TTF" type="DynamicFontData" id=1]
+[ext_resource path="res://GUI/Joystick.tscn" type="PackedScene" id=2]
+[ext_resource path="res://UI/DashBar.tscn" type="PackedScene" id=3]
+[ext_resource path="res://GUI/SpellTree.tscn" type="PackedScene" id=4]
+[ext_resource path="res://Assets/Fonts/Iron100.tres" type="DynamicFont" id=5]
+[ext_resource path="res://GUI/BigCircle.png" type="Texture" id=6]
+[ext_resource path="res://GUI/GameGUI.gd" type="Script" id=7]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Control
+
+onready var spell_cast_text = get_node(\"SpellCast/SpellCast\")
+onready var spell_cast_anim = get_node(\"SpellCast/SpellCast/Anim\")
+
+func _on_Wizard_learn_spell(spell_name):
+	$SpellLearned.text = \"Word spell learned - \" + spell_name
+	spell_cast_anim.play(\"Learned\")
+	pass # Replace with function body.
+
+func _on_PowerTree_cast_spell(spell_list):
+	spell_cast_text.text = get_spell_name(spell_list)
+	if spell_cast_anim.is_playing():
+		spell_cast_anim.stop()
+	spell_cast_anim.play(\"Casted\")
+	pass # Replace with function body.
+
+func get_spell_name(spell_list : Array):
+	var spell_name : String = \"*\"
+	for spell in spell_list:
+		spell_name += spell + \" \"
+	spell_name[spell_name.length() - 1] = \"*\"
+	return spell_name
+
+func remove_android_hud():
+	$Jump.hide()
+	$Joystick.hide()
+	$Dash.hide()
+	pass
+"
+
+[sub_resource type="GDScript" id=2]
+script/source = "extends Control
+
+var spell_buttons : Array = []
+
+export var casting : bool = false
+export var screen_touched : bool = false
+export var screen_drag : bool = false
+var can_cast : bool = true
+
+onready var initial_button = $Anchor/Initial
+onready var spell_particles = $SpellParticles
+onready var spell_effect_particles = $SpellParticles/EffectParticles
+
+var current_pointer = -1
+
+signal on_casting_spell()
+signal on_cast_spell()
+signal on_spell(spell_scene)
+
+func _ready():
+	connect(\"on_cast_spell\", SpellManager, \"on_cast_spell\")
+	connect(\"on_spell\", SpellManager, \"on_spell\")
+	_get_spell_buttons()
+	pass
+
+func _get_spell_buttons():
+	spell_buttons = get_tree().get_nodes_in_group(\"SpellButton\")
+	for spell_button in spell_buttons:
+		spell_button.connect(\"spell_pressed\", self, \"on_spell_pressed\")
+	pass
+
+func _input(event):
+	var pointer = _extract_pointer(event)
+	if event is InputEventScreenTouch:
+		if !screen_drag and current_pointer != pointer and event.pressed and $ControlArea.is_inside(event.position):
+			if !MultiTouch.pointer_dic.keys().has(pointer):
+				MultiTouch.pointer_dic[\"Spell\"] = pointer
+				current_pointer = pointer
+	if current_pointer == -1:
+		return
+	if current_pointer == pointer:
+		_process_input(event)
+	pass
+
+func _process_input(event):
+	var touch = event is InputEventScreenTouch
+	var drag = event is InputEventScreenDrag
+	if touch:
+		_on_touch_screen(event)
+	if drag:
+		_on_drag_screen(event)
+	pass
+
+func _extract_pointer(event):
+	var touch = event is InputEventScreenTouch
+	var drag = event is InputEventScreenDrag
+	if touch or drag:
+		return event.index
+	else:
+		return -1
+	pass
+
+func _on_touch_screen(event : InputEventScreenTouch):
+	screen_touched = event.pressed
+	if screen_touched:
+		if !casting:
+			if initial_button.get_global_rect().has_point(event.position):
+				_initial_cast()
+				spell_particles.global_position = event.position
+	else:
+		screen_drag = false
+		current_pointer = -1
+		MultiTouch.pointer_dic.erase(\"Spell\")
+		if casting:
+			_cast_spell()
+	pass
+
+func _initial_cast():
+	casting = true
+	initial_button.on_click()
+	_set_spell_particles_emitting(true)
+	emit_signal(\"on_casting_spell\")
+	pass
+
+func _on_drag_screen(event : InputEventScreenDrag):
+	if screen_touched:
+		if !casting:
+			if initial_button.get_global_rect().has_point(event.position):
+				_initial_cast()
+		screen_drag = true
+		spell_particles.global_position = event.position
+		_check_spell_rect(event.position)
+	pass
+
+func _check_spell_rect(ev_position : Vector2):
+	var spell_activated = false
+	for spell_button in spell_buttons:
+		if spell_button.can_be_clicked() and !spell_activated:
+			if spell_button.get_global_rect().has_point(ev_position):
+				spell_button.on_click()
+				spell_activated = true
+	pass
+
+func on_spell_pressed(spell_scene : PackedScene):
+	emit_signal(\"on_spell\", spell_scene)
+	pass
+
+func _cast_spell():
+	emit_signal(\"on_cast_spell\")
+	casting = false
+	screen_drag = false
+	_set_spell_particles_emitting(false)
+	_reset_buttons()
+	pass
+
+func _set_spell_particles_emitting(value : bool):
+	spell_particles.emitting = value
+	spell_effect_particles.emitting = value
+	pass
+
+func _reset_buttons():
+	for spell_button in spell_buttons:
+		spell_button.reset()
+	pass
+
+func _on_SpellManager_cast_ready():
+	can_cast = true
+	pass
+"
+
+[sub_resource type="DynamicFont" id=3]
+size = 28
+use_filter = true
+font_data = ExtResource( 1 )
+
+[sub_resource type="GDScript" id=4]
+script/source = "extends Control
+
+onready var bar = $RadialProgressBar
+
+func set_max(max_value):
+	bar.set_max(max_value)
+	set_value(max_value)
+
+func set_value(value):
+	bar.set_progress(value)
+"
+
+[sub_resource type="GDScript" id=5]
+script/source = "extends Control
+
+var pressed : bool = false
+var posBola : Vector2
+var fuerza : Vector2
+var centroControl
+var sizeCentro
+
+var bg
+var ball
+
+var current_pointer : int = -1
+var screen_drag : bool = false
+
+signal analog_force(force)
+
+func _ready():
+	bg = get_node(\"bg\")
+	ball = get_node(\"ball\")
+	centroControl = bg.global_position
+	sizeCentro = bg.texture.get_size()
+	pass
+
+func _input(event):
+	var pointer = extract_pointer(event)
+	if event is InputEventScreenTouch:
+		if !screen_drag and current_pointer != pointer and event.pressed and isInside(event.position.x,event.position.y):
+			if !MultiTouch.pointer_dic.keys().has(pointer):
+				MultiTouch.pointer_dic[\"Joystick\"] = pointer
+				current_pointer = pointer
+	if current_pointer == -1:
+		return
+	if current_pointer == pointer:
+		process_input(event)
+	pass
+
+func extract_pointer(event):
+	var touch = event is InputEventScreenTouch
+	var drag = event is InputEventScreenDrag
+	if touch or drag:
+		return event.index
+	else:
+		return -1
+
+func process_input(event):
+	if event is InputEventScreenDrag:
+		if isInside(event.position.x, event.position.y):
+			pressed = true
+			screen_drag = true
+	if event is InputEventScreenTouch:
+		if !event.is_pressed():
+			ball.position = Vector2(0,0)
+			fuerza = Vector2(0,0)
+			emit_signal(\"analog_force\", fuerza)
+			pressed = false
+			screen_drag = false
+			current_pointer = -1
+			MultiTouch.pointer_dic.erase(\"Joystick\")
+	if pressed:
+		updateBolaPosition(event.position)
+	pass
+
+func isInside(x, y):
+	return x < centroControl.x + sizeCentro.x * 0.5 and x >= centroControl.x - sizeCentro.x * 0.5 and y < centroControl.y + sizeCentro.y * 0.5 and y > centroControl.y - sizeCentro.y * 0.5
+
+func updateBolaPosition(event):
+	calculateForce(event)
+	posBola.x = sizeCentro.x/2 * fuerza.x
+	posBola.y = sizeCentro.y/2 * -fuerza.y
+	ball.position = posBola 
+	pass
+
+func calculateForce(event):
+	fuerza.x = (event.x - centroControl.x)/(sizeCentro.x/2)
+	fuerza.y = -(event.y - centroControl.y)/(sizeCentro.y/2)
+	if fuerza.length_squared() > 1:
+		fuerza = fuerza / fuerza.length()
+	emit_signal(\"analog_force\", fuerza)
+	pass
+"
+
+[sub_resource type="StyleBoxFlat" id=6]
+bg_color = Color( 0.839216, 0.839216, 0.839216, 1 )
+
+[sub_resource type="StyleBoxFlat" id=7]
+bg_color = Color( 0.211765, 0.211765, 0.211765, 1 )
+
+[sub_resource type="GDScript" id=8]
+script/source = "extends ProgressBar
+
+export var cooldown_time : float = 1
+
+func _ready():
+	SpellManager.connect(\"cast_cooldown\", self, \"on_cast_cooldown\")
+	SpellManager.connect(\"cast_ready\", self, \"on_cast_ready\")
+	value = cooldown_time
+	max_value = cooldown_time
+	pass
+
+func on_cast_cooldown(cd):
+	value = cooldown_time - cd
+	pass # Replace with function body.
+
+func on_cast_ready():
+	value = cooldown_time
+	pass # Replace with function body.
+"
+
+[sub_resource type="Animation" id=9]
+length = 4.0
+tracks/0/type = "value"
+tracks/0/path = NodePath(".:percent_visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 1.5 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ 0.0, 1.0 ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath(".:self_modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 1.1, 2.1, 4 ),
+"transitions": PoolRealArray( 0.5, 1, 0.5, 1 ),
+"update": 0,
+"values": [ Color( 1, 1, 1, 0 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 0 ) ]
+}
+
+[sub_resource type="DynamicFont" id=10]
+size = 26
+use_filter = true
+font_data = ExtResource( 1 )
+
+[sub_resource type="Animation" id=11]
+length = 1.5
+tracks/0/type = "value"
+tracks/0/path = NodePath(".:rect_position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.5 ),
+"transitions": PoolRealArray( 0.5, 1 ),
+"update": 0,
+"values": [ Vector2( 0, 0 ), Vector2( 0, -30 ) ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath(".:self_modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 0.2, 1, 1.5 ),
+"transitions": PoolRealArray( 1, 1, 0.5, 1 ),
+"update": 0,
+"values": [ Color( 1, 1, 1, 0 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 1 ), Color( 1, 1, 1, 0 ) ]
+}
+
+[node name="GUI" type="CanvasLayer"]
+follow_viewport_enable = true
+script = ExtResource( 7 )
+
+[node name="Control" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = SubResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="PowerTree" parent="Control" instance=ExtResource( 4 )]
+script = SubResource( 2 )
+
+[node name="Jump" type="TextureButton" parent="Control"]
+visible = false
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -156.44
+margin_top = -155.85
+margin_right = -12.4404
+margin_bottom = -11.8502
+texture_normal = ExtResource( 6 )
+expand = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="Control/Jump"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_fonts/font = SubResource( 3 )
+text = "JUMP"
+align = 1
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Dash" type="TextureButton" parent="Control"]
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -321.665
+margin_top = -155.949
+margin_right = -197.665
+margin_bottom = -31.9489
+texture_normal = ExtResource( 6 )
+expand = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="Control/Dash"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_fonts/font = SubResource( 3 )
+text = "DASH"
+align = 1
+valign = 1
+
+[node name="DashBar" parent="Control/Dash" instance=ExtResource( 3 )]
+show_behind_parent = true
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+script = SubResource( 4 )
+
+[node name="Interact" type="TextureButton" parent="Control"]
+visible = false
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -436.781
+margin_top = -310.233
+margin_right = -304.781
+margin_bottom = -172.233
+texture_normal = ExtResource( 6 )
+expand = true
+stretch_mode = 5
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="Control/Interact"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -66.0
+margin_top = -69.0
+margin_right = 66.0
+margin_bottom = 69.0
+custom_fonts/font = SubResource( 3 )
+text = "Interact"
+align = 1
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Joystick" parent="Control" instance=ExtResource( 2 )]
+margin_left = 121.043
+margin_top = 602.485
+margin_right = 122.043
+margin_bottom = 603.485
+script = SubResource( 5 )
+
+[node name="SpellColdown" type="ProgressBar" parent="Control"]
+visible = false
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -39.0
+margin_top = -50.0
+margin_right = 60.0
+margin_bottom = -42.0
+mouse_filter = 2
+custom_styles/fg = SubResource( 6 )
+custom_styles/bg = SubResource( 7 )
+max_value = 2.0
+value = 1.0
+percent_visible = false
+script = SubResource( 8 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="SpellLearned" type="Label" parent="Control"]
+visible = false
+self_modulate = Color( 1, 1, 1, 0 )
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -585.087
+margin_top = 98.3738
+margin_right = 581.913
+margin_bottom = 169.374
+custom_fonts/font = ExtResource( 5 )
+text = "Word spell learned - Fa"
+align = 1
+percent_visible = 0.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Anim" type="AnimationPlayer" parent="Control/SpellLearned"]
+anims/Learned = SubResource( 9 )
+
+[node name="SpellCast" type="Control" parent="Control"]
+visible = false
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -94.3276
+margin_top = -33.0565
+margin_right = 123.672
+margin_bottom = 2.94348
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="SpellCast" type="Label" parent="Control/SpellCast"]
+self_modulate = Color( 1, 1, 1, 0 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_fonts/font = SubResource( 10 )
+text = "Mur"
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Anim" type="AnimationPlayer" parent="Control/SpellCast/SpellCast"]
+anims/Casted = SubResource( 11 )
+[connection signal="on_casting_spell" from="Control/PowerTree" to="." method="_on_PowerTree_on_casting_spell"]
+[connection signal="button_down" from="Control/Dash" to="." method="_on_Dash_button_down"]
+[connection signal="button_down" from="Control/Interact" to="." method="_on_Interact_button_down"]
+[connection signal="analog_force" from="Control/Joystick" to="." method="_on_Joystick_analog_force"]

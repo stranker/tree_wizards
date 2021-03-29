@@ -1,0 +1,88 @@
+[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://Assets/Sprites/Spells/fador_icon.png" type="Texture" id=1]
+[ext_resource path="res://Assets/Sprites/ItemIcons/icon_05.png" type="Texture" id=2]
+[ext_resource path="res://Assets/Sprites/ItemIcons/icon_09.png" type="Texture" id=3]
+[ext_resource path="res://Assets/Sprites/ItemIcons/icon_08.png" type="Texture" id=4]
+[ext_resource path="res://Assets/Sprites/ItemIcons/icon_04.png" type="Texture" id=5]
+[ext_resource path="res://Assets/Sprites/ItemIcons/icon_07.png" type="Texture" id=6]
+[ext_resource path="res://Assets/Sprites/ItemIcons/icon_06.png" type="Texture" id=7]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Control
+
+export var level : int = 0
+var selected : bool = false
+
+var new_pos : Vector2 = Vector2.ZERO
+var last_pos : Vector2 = Vector2.ZERO
+
+var merge_item_list : Array = []
+export (Array, Texture) var textures = []
+
+signal on_end_selection(merge_item)
+signal on_start_selection(merge_item)
+
+func _ready():
+	$TextureRect.texture = textures[level]
+	last_pos = rect_position
+	pass
+
+func _on_MergeItem_gui_input(event):
+	if event is InputEventScreenTouch:
+		selected = event.is_pressed()
+		if !selected:
+			rect_global_position = new_pos
+			emit_signal(\"on_end_selection\", self)
+			last_pos = rect_position
+		if selected:
+			emit_signal(\"on_start_selection\", self)
+	if selected:
+		if (event is InputEventMouseMotion) or (event is InputEventScreenDrag):
+			new_pos = rect_global_position + event.position - rect_size * 0.5
+			rect_global_position = new_pos
+	pass
+
+func upgrade():
+	level += 1
+	$TextureRect.texture = textures[level]
+	pass
+
+func delete():
+	call_deferred(\"queue_free\")
+	pass
+
+func swap_pos(swap_item : Control):
+	rect_position = swap_item.last_pos
+	swap_item.rect_position = last_pos
+	last_pos = rect_position
+	swap_item.last_pos = swap_item.rect_position
+	pass
+
+func get_level():
+	return level
+
+func get_texture():
+	return textures[level]
+"
+
+[node name="MergeItem" type="Control"]
+margin_right = 96.0
+margin_bottom = 96.0
+rect_min_size = Vector2( 96, 96 )
+script = SubResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+textures = [ ExtResource( 5 ), ExtResource( 2 ), ExtResource( 7 ), ExtResource( 6 ), ExtResource( 4 ), ExtResource( 3 ) ]
+
+[node name="TextureRect" type="TextureRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource( 1 )
+expand = true
+stretch_mode = 6
+__meta__ = {
+"_edit_use_anchors_": false
+}
+[connection signal="gui_input" from="." to="." method="_on_MergeItem_gui_input"]

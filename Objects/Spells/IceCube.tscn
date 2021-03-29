@@ -18,6 +18,11 @@ func _ready():
 	randomize()
 	pass
 
+func _on_dead():
+	$Anim.playback_speed = 2
+	ice_break()
+	pass
+
 func set_time(time):
 	active = true
 	ice_duration = time
@@ -29,11 +34,6 @@ func ice_break():
 	new_tween()
 	$Anim.play(\"Break\")
 	pass
-
-func stop():
-	$Anim.playback_speed = 2
-	ice_break()
-	active = false
 
 func restart():
 	$Timer.stop()
